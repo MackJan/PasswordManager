@@ -3,8 +3,12 @@
 <body>
 
 {% for x in fruits %}
-  <h1>{{ x }}</h1>
+<h1>{{ forloop.counter0 }}</h1>
 {% endfor %}
+
+{%comment "this is a testcomment"%}
+this is a comment
+{%endcomment%}
 
 <p>In views.py you can see what the fruits variable looks like.</p>
 

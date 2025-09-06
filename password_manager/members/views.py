@@ -25,7 +25,11 @@ def main(request):
 
 def testing(request):
   template = loader.get_template('template.html')
+  test_dir = {
+      "apple": "fruit",
+      "potato": "vegetable",
+  }
   context = {
-    'fruits': ['Apple', 'Banana', 'Cherry'],
+    'fruits': test_dir,
   }
   return HttpResponse(template.render(context, request))
