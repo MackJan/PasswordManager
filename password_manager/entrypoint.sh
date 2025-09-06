@@ -10,7 +10,8 @@ then
     echo "PostgreSQL started"
 fi
 
-python manage.py flush --no-input
+# Only run migrations, don't flush the database
+python manage.py makemigrations
 python manage.py migrate
 
 exec "$@"
