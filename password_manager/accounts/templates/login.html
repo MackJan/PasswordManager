@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Manager - Login</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'login-register.css' %}">
 </head>
-<body>
-    <div class="container">
-        <div class="logo">
+<body class="form-page">
+    <div class="form-container">
+        <div class="form-title">
             <h1>Password Manager</h1>
         </div>
 
-        <h2 class="form-title">Login</h2>
+        <h2 class="form-subtitle">Login</h2>
 
         <!-- Display error/success messages -->
         {% if messages %}
@@ -43,7 +43,7 @@
             </div>
 
             <!-- Submit button -->
-            <button type="submit" class="btn btn-primary">Login</button>
+            <button type="submit" class="form-button">Login</button>
         </form>
 
         <!-- Link to registration page -->

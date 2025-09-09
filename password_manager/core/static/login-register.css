@@ -1,0 +1,222 @@
+/* Form page styles (login/register) */
+.form-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    padding: 20px;
+}
+
+.form-container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.form-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.form-subtitle {
+    font-size: 18px;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Form elements */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    font-size: 16px;
+    background-color: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+}
+
+/* Form buttons */
+.form-button {
+    width: 100%;
+    padding: 12px 24px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 20px;
+}
+
+.form-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+}
+
+.form-button:active {
+    transform: translateY(0);
+}
+
+/* Form footer */
+.form-footer {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.form-footer p {
+    color: #6c757d;
+    margin-bottom: 0;
+    font-size: 14px;
+}
+
+.form-footer a {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.form-footer a:hover {
+    color: #2980b9;
+    text-decoration: underline;
+}
+
+/* Alert messages */
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.alert-primary {
+    background-color: #e3f2fd;
+    border: 1px solid #bbdefb;
+    color: #1565c0;
+}
+
+.alert-danger {
+    background-color: #ffebee;
+    border: 1px solid #ffcdd2;
+    color: #c62828;
+}
+
+.alert-success {
+    background-color: #e8f5e8;
+    border: 1px solid #c8e6c9;
+    color: #2e7d32;
+}
+
+/* Back to home link */
+.back-link {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    color: #6c757d;
+    text-decoration: none;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-link:hover {
+    color: #3498db;
+}
+
+/* Responsive design for forms */
+@media (max-width: 480px) {
+    .form-container {
+        padding: 24px;
+        margin: 0 12px;
+    }
+
+    .form-title {
+        font-size: 28px;
+    }
+
+    .form-subtitle {
+        font-size: 16px;
+    }
+}
+
+/* Additional form validation styles */
+.form-control.is-invalid {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+.form-control.is-valid {
+    border-color: #27ae60;
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+}
+
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #e74c3c;
+}
+
+.valid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #27ae60;
+}
+
+/* Password strength indicator (optional) */
+.password-strength {
+    margin-top: 8px;
+    height: 4px;
+    background-color: #e9ecef;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.strength-weak { background-color: #e74c3c; }
+.strength-fair { background-color: #f39c12; }
+.strength-good { background-color: #f1c40f; }
+.strength-strong { background-color: #27ae60; }
