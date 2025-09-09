@@ -1,1 +1,0 @@
-console.log("Password Manager JS loaded");

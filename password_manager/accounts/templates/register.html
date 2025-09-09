@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager - Register</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>Password Manager</h1>
+        </div>
+
+        <h2 class="form-title">Create Account</h2>
+
+        <!-- Display error/success messages -->
+        {% if messages %}
+        <div class="alert alert-primary" role="alert">
+            {% for message in messages %}
+            {{ message }}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Registration form -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- First Name input field -->
+            <div class="form-group">
+                <label for="first_name">First Name</label>
+                <input type="text" class="form-control" id="first_name"
+                    placeholder="Enter your first name" name="first_name" required>
+            </div>
+
+            <!-- Last Name input field -->
+            <div class="form-group">
+                <label for="last_name">Last Name</label>
+                <input type="text" name="last_name" class="form-control" id="last_name"
+                    placeholder="Enter your last name" required>
+            </div>
+
+            <!-- Username input field -->
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" class="form-control" name="username" id="username"
+                    placeholder="Choose a username" required>
+            </div>
+
+            <!-- Password input field -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" name="password" id="password"
+                    placeholder="Create a strong password" required>
+            </div>
+
+            <!-- Submit button -->
+            <button type="submit" class="btn btn-primary">Create Account</button>
+        </form>
+
+        <!-- Link to login page -->
+        <div class="form-footer">
+            <p>Already have an account? <a href="/login/">Login here</a></p>
+        </div>
+    </div>
+</body>
+</html>

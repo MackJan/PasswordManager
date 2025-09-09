@@ -1,0 +1,10 @@
+<div class="header">
+    <div class="action-buttons">
+        {% if authenticated == 0 %}
+            <a href="/login/" class="btn btn-primary">Login</a>
+            <a href="/register/" class="btn btn-secondary">Register</a>
+        {% else %}
+            <a href="/logout/" class="btn btn-danger">Logout</a>
+        {% endif %}
+    </div>
+</div>
