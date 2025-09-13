@@ -8,19 +8,21 @@ from .models import *
 
 # Define a view function for the login page
 def login_page(request):
+    if request.user.is_authenticated:
+        return redirect('/home')
     # Check if the HTTP request method is POST (form submission)
     if request.method == "POST":
-        username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
 
         # Check if a user with the provided username exists
-        if not User.objects.filter(username=username).exists():
+        if not CustomUser.objects.filter(email=email).exists():
             # Display an error message if the username does not exist
-            messages.error(request, 'Invalid Username')
+            messages.error(request, 'Invalid Email')
             return redirect('/login/')
 
         # Authenticate the user with the provided username and password
-        user = authenticate(username=username, password=password)
+        user = authenticate(email=email, password=password)
 
         if user is None:
             # Display an error message if authentication fails (invalid password)
@@ -39,13 +41,11 @@ def login_page(request):
 def register_page(request):
     # Check if the HTTP request method is POST (form submission)
     if request.method == 'POST':
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        username = request.POST.get('username')
+        email = request.POST.get('email')
         password = request.POST.get('password')
 
         # Check if a user with the provided username already exists
-        user = User.objects.filter(username=username)
+        user = CustomUser.objects.filter(email=email)
 
         if user.exists():
             # Display an information message if the username is taken
@@ -53,10 +53,8 @@ def register_page(request):
             return redirect('/register/')
 
         # Create a new User object with the provided information
-        user = User.objects.create_user(
-            first_name=first_name,
-            last_name=last_name,
-            username=username
+        user = CustomUser.objects.create_user(
+            email=email
         )
 
         # Set the user's password and save the user object

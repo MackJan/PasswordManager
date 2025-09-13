@@ -8,10 +8,12 @@
     <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
 <body>
+<div class="site-header">
 {% include "header.html" %}
-
+</div>
+<div class="main-content">
 {% block content %}
 {% endblock %}
-
+</div>
 </body>
 </html>
