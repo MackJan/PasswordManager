@@ -1,0 +1,33 @@
+# Production Dockerfile
+FROM python:3.11-slim
+
+# Set work directory
+WORKDIR /usr/src/app
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --upgrade pip
+COPY ./requirements.txt .
+RUN pip install -r requirements.txt
+
+# Copy entrypoint script and set permissions
+COPY ./entrypoint.prod.sh /usr/src/app/entrypoint.prod.sh
+RUN sed -i 's/\r$//' /usr/src/app/entrypoint.prod.sh
+RUN chmod 755 /usr/src/app/entrypoint.prod.sh
+
+# Copy project files
+COPY . .
+
+# Create directory for media files only (WhiteNoise handles static files)
+RUN mkdir -p /usr/src/app/media
+
+# Use CMD instead of ENTRYPOINT to avoid permission issues
+CMD ["/bin/bash", "/usr/src/app/entrypoint.prod.sh", "gunicorn", "password_manager.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]

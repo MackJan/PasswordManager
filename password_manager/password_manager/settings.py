@@ -27,7 +27,10 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 DEBUG = bool(os.environ.get("DEBUG", default=0))
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
-
+# uncomment for prod
+#CSRF_TRUSTED_ORIGINS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
+#CSRF_ALLOWED_ORIGINS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
+#CORS_ORIGINS_WHITELIST = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
 
 # Application definition
 
@@ -45,13 +48,13 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'password_manager.urls'
@@ -124,9 +127,28 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+# Production static files configuration
+# Production static files configuration for WhiteNoise
+STATIC_ROOT = '/usr/src/app/staticfiles'
+
+# Tell Django where to find static files in your apps
+STATICFILES_DIRS = [
+    BASE_DIR / "core" / "static",
+]
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = '/usr/src/app/media'
+
+# Whitenoise configuration for static files
+# WhiteNoise configuration for static files
 
 # Default primary key field type
+# WhiteNoise settings
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
+
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
