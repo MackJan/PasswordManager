@@ -1,10 +1,60 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "master.html" %}
+
+{% block title %}
+Password Manager Vault
+{% endblock %}
+
+{% block content %}
 <head>
-    <meta charset="UTF-8">
-    <title>Vault Dashboard</title>
+    <title>Password Manager - Vault</title>
+    <script>
+        // When the user clicks on <div>, open the popup
+        function showPopup() {
+            let popup = document.getElementById("item-popup");
+            let backdrop = document.getElementById("popup-backdrop");
+            popup.classList.add("show");
+            backdrop.classList.add("show");
+        }
+
+        // Close the popup
+        function closePopup() {
+            let popup = document.getElementById("item-popup");
+            let backdrop = document.getElementById("popup-backdrop");
+            popup.classList.remove("show");
+            backdrop.classList.remove("show");
+        }
+
+        // Close popup when clicking outside of it
+        window.onclick = function(event) {
+            let popup = document.getElementById("item-popup");
+            let backdrop = document.getElementById("popup-backdrop");
+            if (event.target === backdrop) {
+                popup.classList.remove("show");
+                backdrop.classList.remove("show");
+            }
+        }
+    </script>
 </head>
-<body>
-Vault Dashboard
-</body>
-</html>
+<div class="hero-section">
+    <div class="hero-title">
+        <h1>Password Manager Vault</h1>
+    </div>
+
+    <h2 class="hero-subtitle">Welcome to Your Vault</h2>
+    <p class="hero-subtitle">Here you can see and manage your store passwords</p>
+    <ul>
+        {% for item in items %}
+        <li>{{item.name}}{{item.username}}</li>
+        {% endfor %}
+    </ul>
+    <button class="popup" onclick="showPopup()"> Add Item</button>
+
+    <!-- Backdrop overlay -->
+    <div id="popup-backdrop" class="popup-backdrop"></div>
+
+    <div id="item-popup">
+            {% include "item-creation.html" %}
+
+    </div>
+</div>
+{% endblock %}
