@@ -81,7 +81,7 @@ jobs:
           # Create .env file with actual image tag from build
           cat > .env << EOF
           SECRET_KEY=${{ secrets.SECRET_KEY }}
-          DEBUG=False
+          DEBUG=0
           DJANGO_ALLOWED_HOSTS=${{ secrets.DJANGO_ALLOWED_HOSTS }}
           DATABASE=postgres
           SQL_ENGINE=django.db.backends.postgresql
@@ -94,6 +94,7 @@ jobs:
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           DJANGO_IMAGE=$DJANGO_IMAGE
+          ENV=prod
           EOF
           
           # Pull the latest image explicitly
