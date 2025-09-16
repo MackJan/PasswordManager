@@ -90,9 +90,9 @@ jobs:
           SQL_PASSWORD=${{ secrets.SQL_PASSWORD }}
           SQL_HOST=db
           SQL_PORT=5432
-          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER=${{ secrets.SQL_USER }}
+          POSTGRES_PASSWORD=${{ secrets.SQL_PASSWORD }}
+          POSTGRES_DB=${{ secrets.SQL_DB }}
           DJANGO_IMAGE=$DJANGO_IMAGE
           ENV=prod
           EOF
