@@ -38,7 +38,8 @@ CSRF_TRUSTED_ORIGINS = [
 ]#CSRF_ALLOWED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS","").split(" ")
 #CORS_ORIGINS_WHITELIST = os.environ.get("CSRF_TRUSTED_ORIGINS","").split(" ")
 
-
+print(CSRF_TRUSTED_ORIGINS)
+print(ALLOWED_HOSTS)
 # Application definition
 
 INSTALLED_APPS = [
