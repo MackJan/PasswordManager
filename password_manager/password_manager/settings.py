@@ -28,9 +28,9 @@ DEBUG = bool(os.environ.get("DEBUG", default=0))
 
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
 # uncomment for prod
-CSRF_TRUSTED_ORIGINS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
-CSRF_ALLOWED_ORIGINS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
-CORS_ORIGINS_WHITELIST = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
+#CSRF_TRUSTED_ORIGINS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
+#CSRF_ALLOWED_ORIGINS = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
+#CORS_ORIGINS_WHITELIST = os.environ.get("DJANGO_ALLOWED_HOSTS","").split(" ")
 
 # Application definition
 

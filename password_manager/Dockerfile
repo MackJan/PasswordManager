@@ -1,28 +1,23 @@
-# pull official base image
 FROM python:3.11-slim
 
-# set work directory
 WORKDIR /usr/src/app
 
-# set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# install system dependencies
-RUN apt-get update && apt-get install -y netcat-traditional bash
+RUN apt-get update && apt-get install -y netcat-traditional bash && rm -rf /var/lib/apt/lists/*
 
-# install dependencies
-RUN pip install --upgrade pip
+# Install Python deps
 COPY ./requirements.txt .
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# copy entrypoint.sh
-COPY ./entrypoint.sh .
-RUN sed -i 's/\r$//g' /usr/src/app/entrypoint.sh
-RUN chmod +x /usr/src/app/entrypoint.sh
+# Place entrypoint outside the application mount to avoid being overwritten by the bind mount
+RUN mkdir -p /docker-entrypoint
+COPY ./entrypoint.sh /docker-entrypoint/entrypoint.sh
+RUN sed -i 's/\r$//g' /docker-entrypoint/entrypoint.sh && chmod +x /docker-entrypoint/entrypoint.sh
 
-# copy project
+# Copy the application code (this will be replaced by the host bind mount at runtime)
 COPY . .
 
-# run entrypoint.sh
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+ENTRYPOINT ["/docker-entrypoint/entrypoint.sh"]

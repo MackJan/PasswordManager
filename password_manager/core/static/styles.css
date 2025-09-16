@@ -13,11 +13,12 @@ body {
     color: #333;
 }
 
+
 /* Header styles */
 .site-header {
     background-color: #fff;
     border-bottom: 1px solid #e9ecef;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -88,7 +89,9 @@ body {
 }
 
 .btn-logout {
-    background-color: #e74c3c;
+    margin-right: 0;
+    margin-left: auto;
+    background-color: #2c3e50;
     color: white;
 }
 
@@ -109,7 +112,7 @@ body {
     padding: 60px 0;
     background-color: white;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     margin-bottom: 40px;
 }
 
@@ -146,7 +149,7 @@ body {
     background-color: white;
     padding: 40px;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     margin-bottom: 32px;
 }
 
@@ -163,46 +166,181 @@ body {
     line-height: 1.7;
 }
 
+/* Vault item styles */
+.vault-item {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.vault-item:hover {
+    background-color: #e9ecef;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.item-info {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex: 1;
+}
+
+.item-field {
+    display: flex;
+    flex-direction: column;
+    min-width: 120px;
+}
+
+.item-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.item-value {
+    font-size: 16px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.item-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.item-username {
+    font-size: 16px;
+    color: #495057;
+    margin: 0;
+}
+
+.item-password {
+    font-size: 16px;
+    color: #495057;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    border: 1px solid #adb5bd;
+    transition: all 0.2s ease;
+}
+
+.item-password:hover {
+    background-color: #dee2e6;
+}
+
+.item-password.hidden::after {
+    content: "••••••••";
+}
+
+.item-password.hidden .password-text {
+    display: none;
+}
+
+.password-toggle-btn {
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .header-container {
         padding: 0 16px;
         height: 56px;
     }
-    
+
     .brand {
         font-size: 20px;
     }
-    
+
     .header-actions {
         gap: 8px;
     }
-    
+
     .btn {
         padding: 6px 12px;
         font-size: 13px;
     }
-    
+
     .hero-title {
         font-size: 32px;
     }
-    
+
     .hero-subtitle {
         font-size: 18px;
     }
-    
+
     .hero-actions {
         flex-direction: column;
         align-items: center;
     }
-    
+
     .hero-actions .btn {
         width: 200px;
     }
-    
+
     .content-section {
         padding: 24px;
         margin: 0 -4px 24px;
+    }
+
+    .vault-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .item-info {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+    }
+
+    .item-field {
+        width: 100%;
+    }
+
+    .item-label {
+        margin-bottom: 8px;
+    }
+
+    .item-value {
+        font-size: 14px;
+    }
+
+    .item-title {
+        font-size: 16px;
+    }
+
+    .item-username,
+    .item-password {
+        font-size: 14px;
     }
 }
 
@@ -211,14 +349,144 @@ body {
     text-align: center;
 }
 
-.mb-0 { margin-bottom: 0; }
-.mb-1 { margin-bottom: 8px; }
-.mb-2 { margin-bottom: 16px; }
-.mb-3 { margin-bottom: 24px; }
-.mb-4 { margin-bottom: 32px; }
+.mb-0 {
+    margin-bottom: 0;
+}
 
-.mt-0 { margin-top: 0; }
-.mt-1 { margin-top: 8px; }
-.mt-2 { margin-top: 16px; }
-.mt-3 { margin-top: 24px; }
-.mt-4 { margin-top: 32px; }
+.mb-1 {
+    margin-bottom: 8px;
+}
+
+.mb-2 {
+    margin-bottom: 16px;
+}
+
+.mb-3 {
+    margin-bottom: 24px;
+}
+
+.mb-4 {
+    margin-bottom: 32px;
+}
+
+.mt-0 {
+    margin-top: 0;
+}
+
+.mt-1 {
+    margin-top: 8px;
+}
+
+.mt-2 {
+    margin-top: 16px;
+}
+
+.mt-3 {
+    margin-top: 24px;
+}
+
+.mt-4 {
+    margin-top: 32px;
+}
+
+/* Popup container */
+.popup {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+/* Backdrop overlay that grays out the background */
+.popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.popup-backdrop.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* The popup container that holds the popup content */
+#item-popup {
+    visibility: hidden;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+}
+
+.item-popup {
+    visibility: hidden;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+}
+
+/* Show the popup when it has the 'show' class */
+#item-popup.show {
+    visibility: visible;
+    -webkit-animation: fadeIn 0.3s;
+    animation: fadeIn 0.3s;
+}
+
+.item-popup.show {
+    visibility: visible;
+    -webkit-animation: fadeIn 0.3s;
+    animation: fadeIn 0.3s;
+}
+
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.close-button {
+    float: right;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+}
