@@ -94,6 +94,7 @@ jobs:
           POSTGRES_PASSWORD=${{ secrets.SQL_PASSWORD }}
           POSTGRES_DB=${{ secrets.SQL_DATABASE }}
           DJANGO_IMAGE=$DJANGO_IMAGE
+          CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }}
           EOF
           
           # Pull the latest image explicitly
