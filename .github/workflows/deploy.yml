@@ -78,7 +78,7 @@ jobs:
           
           echo "Django image: $DJANGO_IMAGE"
           
-          # Create .env file with actual image tag from build
+          # Create .env file with all required environment variables
           cat > .env << EOF
           SECRET_KEY=${{ secrets.SECRET_KEY }}
           DEBUG=0
@@ -94,22 +94,34 @@ jobs:
           POSTGRES_PASSWORD=${{ secrets.SQL_PASSWORD }}
           POSTGRES_DB=${{ secrets.SQL_DATABASE }}
           DJANGO_IMAGE=$DJANGO_IMAGE
-          ENV=prod
           EOF
           
           # Pull the latest image explicitly
           docker pull $DJANGO_IMAGE
           
-          # Stop and remove old containers
-          docker compose -f docker-compose.prod.yml down --remove-orphans
+          # Stop and remove old containers and volumes if they exist
+          docker compose -f docker-compose.prod.yml down --remove-orphans --volumes || true
           
           # Remove old images to free up space
           docker image prune -f
           
-          # Start the application with the new image
-          docker compose -f docker-compose.prod.yml up -d
+          # Wait a moment for cleanup to complete
+          sleep 5
+          
+          # Start the database first to ensure it's ready
+          docker compose -f docker-compose.prod.yml up -d db
+          
+          # Wait for database to be healthy
+          echo "Waiting for database to be ready..."
+          timeout 60 bash -c 'until docker compose -f docker-compose.prod.yml ps db | grep -q "healthy"; do sleep 2; done'
+          
+          # Start the web application
+          docker compose -f docker-compose.prod.yml up -d web
           
           # Show running containers for verification
           docker compose -f docker-compose.prod.yml ps
+          
+          # Show logs to verify startup
+          docker compose -f docker-compose.prod.yml logs --tail=20 web
           
           echo "Deployment completed successfully!"

@@ -31,3 +31,4 @@ RUN mkdir -p /usr/src/app/media
 
 # Use CMD instead of ENTRYPOINT to avoid permission issues
 CMD ["/bin/bash", "/usr/src/app/entrypoint.prod.sh", "gunicorn", "password_manager.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+
