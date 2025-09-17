@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 
-from .models import *
+from .models import VaultItem
 from django.contrib import messages
 
 class NameExists(Exception):
@@ -18,14 +18,15 @@ def vault_dashboard(request):
         if VaultItem.objects.filter(name=item_name, user=request.user).exists():
             messages.error(request, 'Item already exists')
             return redirect('/vault/')
+        try:
+            item = VaultItem(name=item_name, username=item_username, password=item_password, user=request.user)
 
-        item = VaultItem(name=item_name, username=item_username, password=item_password, user=request.user)
-        if item is None:
-            messages.error(request, 'Item does not exist')
-            return redirect('/vault/')
-        else:
             item.save()
             messages.success(request, f'Item "{item_name}" created successfully!')
+        except NameExists:
+            messages.error(request, f'Item "{item_name}" already exists!')
+        except Exception:
+            messages.error(request, 'Something went wrong!')
 
     context = {
         "items": VaultItem.objects.filter(user=request.user),

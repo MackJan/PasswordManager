@@ -2,9 +2,7 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
-from .models import *
+from .models import CustomUser
 
 # Define a view function for the login page
 def login_page(request):

@@ -21,9 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = 'django-insecure-1-^qlv76=!f07&qy@9-s@3mb1_&(b_7nmar^4ro)lot&p6u)3m'
 SECRET_KEY = os.environ.get("SECRET_KEY")
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get("DEBUG", default=0))
 
 ALLOWED_HOSTS = [
@@ -35,13 +33,9 @@ CSRF_TRUSTED_ORIGINS = [
     origin.strip()
     for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(" ")
     if origin.strip()
-]#CSRF_ALLOWED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS","").split(" ")
-#CORS_ORIGINS_WHITELIST = os.environ.get("CSRF_TRUSTED_ORIGINS","").split(" ")
+]
 
-print(CSRF_TRUSTED_ORIGINS)
-print(ALLOWED_HOSTS)
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
