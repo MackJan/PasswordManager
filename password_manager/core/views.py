@@ -9,5 +9,5 @@ def home(request):
     }
     return HttpResponse(template.render(context,request))
 
-def root(request):
+def root():
     return redirect("/home/")
