@@ -100,8 +100,8 @@ jobs:
           # Pull the latest image explicitly
           docker pull $DJANGO_IMAGE
           
-          # Stop and remove old containers and volumes if they exist
-          docker compose -f docker-compose.prod.yml down --remove-orphans --volumes || true
+          # Stop and remove old containers if they exist
+          docker compose -f docker-compose.prod.yml down --remove-orphans || true
           
           # Remove old images to free up space
           docker image prune -f
