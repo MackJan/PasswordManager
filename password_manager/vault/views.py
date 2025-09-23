@@ -16,7 +16,7 @@ def vault_dashboard(request):
         item_password = request.POST.get('password')
 
         if VaultItem.objects.filter(name=item_name, user=request.user).exists():
-            messages.error(request, 'Item already exists')
+            messages.error(request, 'Item with that name already exists')
             return redirect('/vault/')
         try:
             item = VaultItem(name=item_name, username=item_username, password=item_password, user=request.user)

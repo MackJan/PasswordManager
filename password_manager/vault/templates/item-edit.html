@@ -12,15 +12,6 @@
 
     <h2 class="form-subtitle">Edit Vault Item {{ item.name }} </h2>
 
-    <!-- Display error/success messages -->
-    {% if messages %}
-    <div class="alert alert-primary" role="alert">
-        {% for message in messages %}
-        {{ message }}
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <!-- Item edit form -->
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
