@@ -4,6 +4,7 @@ services:
     volumes:
       - static_volume:/usr/src/app/staticfiles/
       - media_volume:/usr/src/app/media
+      - ./logs:/usr/src/app/logs
     ports:
       - "8000:8000"
     environment:
@@ -17,10 +18,18 @@ services:
       - SQL_PASSWORD=${SQL_PASSWORD}
       - SQL_HOST=${SQL_HOST}
       - SQL_PORT=${SQL_PORT}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
     depends_on:
       db:
         condition: service_healthy
+      loki:
+        condition: service_started
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   db:
     image: postgres:15
@@ -37,8 +46,40 @@ services:
       retries: 5
     restart: unless-stopped
 
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-test_password!}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:2.9.0
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    command: -config.file=/etc/promtail/config.yaml
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - ./logs:/var/log/django:ro
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     driver: local
   static_volume:
   media_volume:
+  grafana_data:
