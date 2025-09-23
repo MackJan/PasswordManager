@@ -26,11 +26,11 @@ class LoggingMiddleware:
             _request_data.user_id = str(request.user.id)
         else:
             _request_data.user_id = 'anonymous'
-
+        
         response = self.get_response(request)
-
+        
         # Clean up thread-local data
         if hasattr(_request_data, 'user_id'):
             delattr(_request_data, 'user_id')
-
+        
         return response

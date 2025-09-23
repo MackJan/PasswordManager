@@ -1,200 +1,300 @@
 {
-  "dashboard": {
-    "id": null,
-    "title": "Password Manager Dashboard",
-    "tags": ["django", "password-manager"],
-    "timezone": "browser",
-    "panels": [
+  "id": null,
+  "uid": null,
+  "title": "Password Manager Dashboard",
+  "tags": ["django", "password-manager"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
       {
-        "id": 1,
-        "title": "User Login Activity",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"django\", level=\"INFO\"} |= \"Successful login\" [$__interval])",
-            "refId": "A",
-            "legendFormat": "Successful Logins"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 5},
-                {"color": "red", "value": 10}
-              ]
-            }
-          }
-        },
-        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
-      },
-      {
-        "id": 2,
-        "title": "Failed Login Attempts",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"django\", level=\"WARNING\"} |= \"Login failed\" [$__interval])",
-            "refId": "A",
-            "legendFormat": "Failed Logins"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "yellow", "value": 3},
-                {"color": "red", "value": 5}
-              ]
-            }
-          }
-        },
-        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
-      },
-      {
-        "id": 3,
-        "title": "Vault Activity",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"django\", module=\"vault\"} [$__interval])",
-            "refId": "A",
-            "legendFormat": "Vault Operations"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "blue", "value": 10}
-              ]
-            }
-          }
-        },
-        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
-      },
-      {
-        "id": 4,
-        "title": "Critical Alerts",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"django\", level=\"ERROR\"} [$__interval])",
-            "refId": "A",
-            "legendFormat": "Critical Errors"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "steps": [
-                {"color": "green", "value": null},
-                {"color": "red", "value": 1}
-              ]
-            }
-          }
-        },
-        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
-      },
-      {
-        "id": 5,
-        "title": "Login Activity Over Time",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"django\", level=\"INFO\"} |= \"Successful login\" [5m])",
-            "refId": "A",
-            "legendFormat": "Successful Logins"
-          },
-          {
-            "expr": "count_over_time({job=\"django\", level=\"WARNING\"} |= \"Login failed\" [5m])",
-            "refId": "B",
-            "legendFormat": "Failed Logins"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            }
-          }
-        },
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
-      },
-      {
-        "id": 6,
-        "title": "Recent Security Events",
-        "type": "logs",
-        "targets": [
-          {
-            "expr": "{job=\"django\"} |= \"security\" or \"unauthorized\" or \"failed\"",
-            "refId": "A"
-          }
-        ],
-        "options": {
-          "showTime": true,
-          "showLabels": false,
-          "showCommonLabels": false,
-          "wrapLogMessage": false,
-          "prettifyLogMessage": false,
-          "enableLogDetails": true,
-          "dedupStrategy": "none",
-          "sortOrder": "Descending"
-        },
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
-      },
-      {
-        "id": 7,
-        "title": "User Registration Activity",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"django\", level=\"INFO\"} |= \"New user registered\" [1h])",
-            "refId": "A",
-            "legendFormat": "New Registrations"
-          }
-        ],
-        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
-      },
-      {
-        "id": 8,
-        "title": "Password Vault Operations",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "count_over_time({job=\"django\", module=\"vault\"} |= \"created vault item\" [5m])",
-            "refId": "A",
-            "legendFormat": "Items Created"
-          },
-          {
-            "expr": "count_over_time({job=\"django\", module=\"vault\"} |= \"updated vault item\" [5m])",
-            "refId": "B",
-            "legendFormat": "Items Updated"
-          }
-        ],
-        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+        "name": "DS_LOKI",
+        "type": "datasource",
+        "label": "Datasource",
+        "query": "loki",
+        "current": {},
+        "options": [],
+        "refresh": 1
       }
-    ],
-    "time": {
-      "from": "now-1h",
-      "to": "now"
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "User Login Activity - Count",
+      "type": "stat",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"django\", level=\"INFO\"} |= \"Successful login\" [$__range]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 }
     },
-    "refresh": "30s"
-  }
+    {
+      "id": 11,
+      "title": "User Login Activity - Log Messages",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"django\", level=\"INFO\"} |= \"Successful login\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 }
+    },
+    {
+      "id": 2,
+      "title": "Failed Login Attempts - Count",
+      "type": "stat",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"django\", level=\"WARNING\"} |= \"Login failed\" [$__range]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 }
+    },
+    {
+      "id": 12,
+      "title": "Failed Login Attempts - Log Messages",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"django\", level=\"WARNING\"} |= \"Login failed\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 4 }
+    },
+    {
+      "id": 3,
+      "title": "Vault Activity - Count",
+      "type": "stat",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"django\", module=\"vault\"} [$__range]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "blue", "value": 10 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 }
+    },
+    {
+      "id": 13,
+      "title": "Vault Activity - Log Messages",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"django\", module=\"vault\"}"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 }
+    },
+    {
+      "id": 4,
+      "title": "Critical Alerts - Count",
+      "type": "stat",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(count_over_time({job=\"django\", level=\"ERROR\"} [$__range]))"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 }
+    },
+    {
+      "id": 14,
+      "title": "Critical Alerts - Log Messages",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"django\", level=\"ERROR\"}"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 4 }
+    },
+    {
+      "id": 5,
+      "title": "Login Activity Over Time",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by () (count_over_time({job=\"django\", level=\"INFO\"} |= \"Successful login\" [5m]))",
+          "legendFormat": "Successful Logins"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by () (count_over_time({job=\"django\", level=\"WARNING\"} |= \"Login failed\" [5m]))",
+          "legendFormat": "Failed Logins"
+        }
+      ],
+      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } }, "overrides": [] },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+    },
+    {
+      "id": 6,
+      "title": "All Security Events (Combined Log View)",
+      "type": "logs",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{job=\"django\"} |~ \"(security|unauthorized|failed|Login failed|Successful login|vault)\""
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+    },
+    {
+      "id": 7,
+      "title": "User Registration Activity",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by () (count_over_time({job=\"django\", level=\"INFO\"} |= \"New user registered\" [1h]))",
+          "legendFormat": "New Registrations"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }
+    },
+    {
+      "id": 8,
+      "title": "Password Vault Operations",
+      "type": "timeseries",
+      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by () (count_over_time({job=\"django\", module=\"vault\"} |= \"created vault item\" [5m]))",
+          "legendFormat": "Items Created"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by () (count_over_time({job=\"django\", module=\"vault\"} |= \"updated vault item\" [5m]))",
+          "legendFormat": "Items Updated"
+        }
+      ],
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }
+    }
+  ]
 }
-
