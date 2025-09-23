@@ -3,19 +3,31 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from .models import CustomUser
+import logging
+
+# Get logger for accounts app
+logger = logging.getLogger('accounts')
+alerts_logger = logging.getLogger('alerts')
 
 # Define a view function for the login page
 def login_page(request):
+    logger.info(f"Login page accessed from IP: {request.META.get('REMOTE_ADDR')}")
+
     if request.user.is_authenticated:
+        logger.info(f"Already authenticated user {request.user.email} redirected to home")
         return redirect('/home')
+
     # Check if the HTTP request method is POST (form submission)
     if request.method == "POST":
         email = request.POST.get('email')
         password = request.POST.get('password')
 
+        logger.info(f"Login attempt for email: {email}")
+
         # Check if a user with the provided username exists
         if not CustomUser.objects.filter(email=email).exists():
             # Display an error message if the username does not exist
+            logger.warning(f"Login failed - Email not found: {email} from IP: {request.META.get('REMOTE_ADDR')}")
             messages.error(request, 'Invalid Email')
             return redirect('/login/')
 
@@ -24,10 +36,13 @@ def login_page(request):
 
         if user is None:
             # Display an error message if authentication fails (invalid password)
+            logger.warning(f"Login failed - Invalid password for email: {email} from IP: {request.META.get('REMOTE_ADDR')}")
+            alerts_logger.error(f"Multiple failed login attempts detected for email: {email}")
             messages.error(request, "Invalid Password")
             return redirect('/login/')
         else:
             # Log in the user and redirect to the home page upon successful login
+            logger.info(f"Successful login for user: {email}")
             login(request, user)
             return redirect('/home/')
 
@@ -37,16 +52,21 @@ def login_page(request):
 
 # Define a view function for the registration page
 def register_page(request):
+    logger.info(f"Registration page accessed from IP: {request.META.get('REMOTE_ADDR')}")
+
     # Check if the HTTP request method is POST (form submission)
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
+
+        logger.info(f"Registration attempt for email: {email}")
 
         # Check if a user with the provided username already exists
         user = CustomUser.objects.filter(email=email)
 
         if user.exists():
             # Display an information message if the username is taken
+            logger.warning(f"Registration failed - Email already exists: {email}")
             messages.info(request, "Username already taken!")
             return redirect('/register/')
 
@@ -60,6 +80,7 @@ def register_page(request):
         user.save()
 
         # Display an information message indicating successful account creation
+        logger.info(f"New user registered successfully: {email}")
         messages.info(request, "Account created Successfully!")
         return redirect('/register/')
 
@@ -67,5 +88,7 @@ def register_page(request):
     return render(request, 'register.html')
 
 def logout_page(request):
+    if request.user.is_authenticated:
+        logger.info(f"User logged out: {request.user.email}")
     logout(request)
     return redirect('/login/')
