@@ -12,15 +12,6 @@
 
     <h2 class="form-subtitle">Add a Vault Item</h2>
 
-    <!-- Display error/success messages -->
-    {% if messages %}
-    <div class="alert alert-primary" role="alert">
-        {% for message in messages %}
-        {{ message }}
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <!-- Item creation form -->
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}

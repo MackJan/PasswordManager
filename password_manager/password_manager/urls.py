@@ -21,6 +21,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('',include('accounts.urls')),
-    path('',include('vault.urls'))
+    path('',include('vault.urls')),
+    path("", include("django_prometheus.urls")),  # /metrics endpoint
 ]
 

@@ -52,6 +52,14 @@ Password Manager Item Edit
     <p class="hero-subtitle">Here you can edit your saved Items</p>
 
     <div class="vault-items-container">
+        <!-- Display error/success messages -->
+        {% if messages %}
+        <div class="alert alert-primary" role="alert">
+            {% for message in messages %}
+            {{ message }}
+            {% endfor %}
+        </div>
+        {% endif %}
         {% for item in items %}
         <div class="vault-item">
             <div class="item-info">
@@ -72,6 +80,7 @@ Password Manager Item Edit
                 <div class="item-field">
                     <button class="btn btn-primary popup" onclick="showPopup('{{ item.id }}')">Edit</button>
                 </div>
+                <button class="btn btn-logout">Delete</button>
             </div>
         </div>
         <div id="item-{{item.id}}" class="item-popup">

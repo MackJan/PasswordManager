@@ -95,11 +95,20 @@ jobs:
           POSTGRES_DB=${{ secrets.SQL_DATABASE }}
           DJANGO_IMAGE=$DJANGO_IMAGE
           CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }}
+          GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
           EOF
           
           # Pull the latest image explicitly
           docker pull $DJANGO_IMAGE
           
+          # Copy configuration files if they don't exist
+          [ ! -f loki-config.yaml ] && curl -O https://raw.githubusercontent.com/MackJan/PasswordManager/main/loki-config.yaml
+          [ ! -f promtail-config.yaml ] && curl -O https://raw.githubusercontent.com/MackJan/PasswordManager/main/promtail-config.yaml
+          [ ! -f grafana-dashboard.json ] && curl -O https://raw.githubusercontent.com/MackJan/PasswordManager/main/grafana-dashboard.json
+          
+          # Create logs directory
+          mkdir -p logs
+                  
           # Stop and remove old containers if they exist
           docker compose -f docker-compose.prod.yml down --remove-orphans || true
           
