@@ -113,15 +113,8 @@ jobs:
           # Wait a moment for cleanup to complete
           sleep 5
           
-          # Start the database first to ensure it's ready
-          docker compose -f docker-compose.prod.yml up -d db
-          
-          # Wait for database to be healthy
-          echo "Waiting for database to be ready..."
-          timeout 60 bash -c 'until docker compose -f docker-compose.prod.yml ps db | grep -q "healthy"; do sleep 2; done'
-          
-          # Start the web application
-          docker compose -f docker-compose.prod.yml up -d web
+          # Start everything
+          docker compose -f docker-compose.prod.yml up -d 
           
           # Show running containers for verification
           docker compose -f docker-compose.prod.yml ps
