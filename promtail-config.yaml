@@ -1,8 +1,17 @@
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
+
 clients:
   - url: http://loki:3100/loki/api/v1/push
+    tenant_id: main
+    headers:
+      X-Scope-OrgID: main
+    # Add authentication header
+    basic_auth:
+      username: promtail
+      password: ${LOKI_API_KEY:-secure_api_key_123}
+
 scrape_configs:
   - job_name: docker
     static_configs:
@@ -25,9 +34,11 @@ scrape_configs:
             message: message
             module: module
             user_id: user_id
+            ip: ip
       - timestamp:
           source: timestamp
           format: RFC3339
       - labels:
           level:
           module:
+          ip:

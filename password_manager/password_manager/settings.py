@@ -168,7 +168,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'json': {
-            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(name)s", "message": "%(message)s", "user_id": "%(user_id)s"}',
+            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(name)s", "message": "%(message)s", "user_id": "%(user_id)s", "ip": "%(ip)s"}',
             'datefmt': '%Y-%m-%dT%H:%M:%S%z'
         },
         'verbose': {
@@ -249,19 +249,10 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
-        'core': {
-            'handlers': ['django_file'],
-            'level': 'INFO',
-            'propagate': True,
-        },
         'alerts': {
             'handlers': ['alerts_file'],
             'level': 'ERROR',
-            'propagate': True,
+            'propagate': False,
         },
-    },
-    'root': {
-        'handlers': ['console'],
-        'level': 'INFO',
     },
 }

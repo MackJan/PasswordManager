@@ -1,11 +1,11 @@
 {
   "id": null,
   "uid": null,
-  "title": "Password Manager Dashboard",
-  "tags": ["django", "password-manager"],
+  "title": "Password Manager Security Dashboard",
+  "tags": ["django", "password-manager", "security"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "time": { "from": "now-1h", "to": "now" },
   "templating": {
@@ -13,7 +13,7 @@
       {
         "name": "DS_LOKI",
         "type": "datasource",
-        "label": "Datasource",
+        "label": "Loki Datasource",
         "query": "loki",
         "current": {},
         "options": [],
@@ -40,29 +40,29 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 10 }
+              { "color": "yellow", "value": 10 },
+              { "color": "red", "value": 50 }
             ]
-          }
-        },
-        "overrides": []
+          },
+          "unit": "short"
+        }
       },
       "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 }
     },
     {
       "id": 11,
-      "title": "User Login Activity - Log Messages",
+      "title": "User Login Activity - Recent Logs",
       "type": "logs",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=\"django\", level=\"INFO\"} |= \"Successful login\""
+          "expr": "{job=\"django\", level=\"INFO\"} |= \"Successful login\" | json | line_format \"{{.timestamp}} [{{.ip}}] User {{.user_id}}: {{.message}}\""
         }
       ],
       "options": {
         "showTime": true,
-        "showLabels": true,
+        "showLabels": false,
         "showCommonLabels": false,
         "wrapLogMessage": true,
         "prettifyLogMessage": true,
@@ -70,7 +70,7 @@
         "dedupStrategy": "none",
         "sortOrder": "Descending"
       },
-      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 }
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 4 }
     },
     {
       "id": 2,
@@ -93,26 +93,26 @@
               { "color": "yellow", "value": 3 },
               { "color": "red", "value": 5 }
             ]
-          }
-        },
-        "overrides": []
+          },
+          "unit": "short"
+        }
       },
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 }
     },
     {
       "id": 12,
-      "title": "Failed Login Attempts - Log Messages",
+      "title": "Failed Login Attempts - Security Logs",
       "type": "logs",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=\"django\", level=\"WARNING\"} |= \"Login failed\""
+          "expr": "{job=\"django\", level=\"WARNING\"} |= \"Login failed\" | json | line_format \"{{.timestamp}} [{{.ip}}] Failed login attempt: {{.message}}\""
         }
       ],
       "options": {
         "showTime": true,
-        "showLabels": true,
+        "showLabels": false,
         "showCommonLabels": false,
         "wrapLogMessage": true,
         "prettifyLogMessage": true,
@@ -120,7 +120,7 @@
         "dedupStrategy": "none",
         "sortOrder": "Descending"
       },
-      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 4 }
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 4 }
     },
     {
       "id": 3,
@@ -140,28 +140,29 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "blue", "value": 10 }
+              { "color": "blue", "value": 10 },
+              { "color": "purple", "value": 50 }
             ]
-          }
-        },
-        "overrides": []
+          },
+          "unit": "short"
+        }
       },
       "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 }
     },
     {
       "id": 13,
-      "title": "Vault Activity - Log Messages",
+      "title": "Vault Activity - Operation Logs",
       "type": "logs",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=\"django\", module=\"vault\"}"
+          "expr": "{job=\"django\", module=\"vault\"} | json | line_format \"{{.timestamp}} [{{.ip}}] User {{.user_id}}: {{.message}}\""
         }
       ],
       "options": {
         "showTime": true,
-        "showLabels": true,
+        "showLabels": false,
         "showCommonLabels": false,
         "wrapLogMessage": true,
         "prettifyLogMessage": true,
@@ -169,7 +170,7 @@
         "dedupStrategy": "none",
         "sortOrder": "Descending"
       },
-      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 }
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 4 }
     },
     {
       "id": 4,
@@ -191,26 +192,26 @@
               { "color": "green", "value": null },
               { "color": "red", "value": 1 }
             ]
-          }
-        },
-        "overrides": []
+          },
+          "unit": "short"
+        }
       },
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 }
     },
     {
       "id": 14,
-      "title": "Critical Alerts - Log Messages",
+      "title": "Critical Alerts - Error Logs",
       "type": "logs",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=\"django\", level=\"ERROR\"}"
+          "expr": "{job=\"django\", level=\"ERROR\"} | json | line_format \"{{.timestamp}} [{{.ip}}] CRITICAL: {{.message}}\""
         }
       ],
       "options": {
         "showTime": true,
-        "showLabels": true,
+        "showLabels": false,
         "showCommonLabels": false,
         "wrapLogMessage": true,
         "prettifyLogMessage": true,
@@ -218,83 +219,76 @@
         "dedupStrategy": "none",
         "sortOrder": "Descending"
       },
-      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 4 }
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 4 }
     },
     {
       "id": 5,
-      "title": "Login Activity Over Time",
+      "title": "Login Activity Timeline",
       "type": "timeseries",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by () (count_over_time({job=\"django\", level=\"INFO\"} |= \"Successful login\" [5m]))",
+          "expr": "sum(rate({job=\"django\", level=\"INFO\"} |= \"Successful login\" [5m]))",
           "legendFormat": "Successful Logins"
         },
         {
           "refId": "B",
-          "expr": "sum by () (count_over_time({job=\"django\", level=\"WARNING\"} |= \"Login failed\" [5m]))",
+          "expr": "sum(rate({job=\"django\", level=\"WARNING\"} |= \"Login failed\" [5m]))",
           "legendFormat": "Failed Logins"
         }
       ],
-      "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 }
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "reqps"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 12 }
     },
     {
       "id": 6,
-      "title": "All Security Events (Combined Log View)",
-      "type": "logs",
+      "title": "Top IP Addresses (Failed Logins)",
+      "type": "table",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=\"django\"} |~ \"(security|unauthorized|failed|Login failed|Successful login|vault)\""
+          "expr": "topk(10, sum by (ip) (count_over_time({job=\"django\", level=\"WARNING\"} |= \"Login failed\" | json [$__range])))"
         }
       ],
-      "options": {
-        "showTime": true,
-        "showLabels": true,
-        "showCommonLabels": false,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": true,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 }
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 12 }
     },
     {
       "id": 7,
-      "title": "User Registration Activity",
+      "title": "User Activity Heatmap",
       "type": "timeseries",
       "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by () (count_over_time({job=\"django\", level=\"INFO\"} |= \"New user registered\" [1h]))",
-          "legendFormat": "New Registrations"
+          "expr": "sum by (user_id) (rate({job=\"django\", module=\"vault\"} | json [5m]))"
         }
       ],
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 }
-    },
-    {
-      "id": 8,
-      "title": "Password Vault Operations",
-      "type": "timeseries",
-      "datasource": { "type": "loki", "uid": "${DS_LOKI}" },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum by () (count_over_time({job=\"django\", module=\"vault\"} |= \"created vault item\" [5m]))",
-          "legendFormat": "Items Created"
-        },
-        {
-          "refId": "B",
-          "expr": "sum by () (count_over_time({job=\"django\", module=\"vault\"} |= \"updated vault item\" [5m]))",
-          "legendFormat": "Items Updated"
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "continuous-GrYlRd" },
+          "unit": "reqps"
         }
-      ],
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 }
+      },
+      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 18 }
     }
   ]
 }
