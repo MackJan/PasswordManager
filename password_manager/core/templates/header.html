@@ -1,9 +1,8 @@
 <div class="header-container">
     <div class="header-actions">
         <a href="/home/" class="btn">Home</a>
-        <a href="/vault/" class="btn">Vault</a>
         {% if authenticated != 0 %}
-            <a href="/vault/edit/" class="btn">Edit</a>
+            <a href="/vault/" class="btn">Vault</a>
         {% endif %}
         {% if authenticated == 0 %}
             <a href="/login/" class="btn btn-primary">Login</a>

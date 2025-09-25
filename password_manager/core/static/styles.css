@@ -100,6 +100,16 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-danger {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+    transform: translateY(-1px);
+}
+
 /* Main content area */
 .main-content {
     max-width: 1200px;
@@ -269,6 +279,177 @@ body {
     color: #495057;
 }
 
+/* Item actions styles */
+.item-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: 16px;
+}
+
+.item-actions .btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    min-width: 60px;
+}
+
+/* Edit popup styles */
+.edit-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.edit-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Popup container */
+.popup {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+/* Backdrop overlay that grays out the background */
+.popup-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.popup-backdrop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Item popup (create form) */
+#item-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#item-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Delete confirmation popup styles */
+.delete-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    max-width: 450px;
+    width: 90%;
+}
+
+.delete-popup.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.delete-container {
+    padding: 24px;
+    text-align: center;
+}
+
+.delete-title {
+    margin-bottom: 16px;
+}
+
+.delete-title h1 {
+    font-size: 24px;
+    color: #e74c3c;
+    margin: 0;
+    font-weight: 600;
+}
+
+.delete-message {
+    margin-bottom: 24px;
+}
+
+.delete-message p {
+    margin: 8px 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.warning-text {
+    color: #e74c3c !important;
+    font-weight: 500;
+    font-size: 14px !important;
+}
+
+#delete-item-name {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.delete-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.delete-actions .btn {
+    min-width: 100px;
+    padding: 10px 16px;
+}
+
+/* Alert styles for messages */
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+}
+
+.alert-primary {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .header-container {
@@ -342,121 +523,41 @@ body {
     .item-password {
         font-size: 14px;
     }
-}
 
-/* Utility classes */
-.text-center {
-    text-align: center;
-}
+    .item-actions {
+        margin-left: 0;
+        margin-top: 12px;
+        justify-content: flex-start;
+        width: 100%;
+    }
 
-.mb-0 {
-    margin-bottom: 0;
-}
+    .item-actions .btn {
+        flex: 1;
+        max-width: 80px;
+    }
 
-.mb-1 {
-    margin-bottom: 8px;
-}
+    .edit-popup,
+    #item-popup {
+        width: 95%;
+        margin: 10px;
+    }
 
-.mb-2 {
-    margin-bottom: 16px;
-}
+    .delete-popup {
+        width: 95%;
+        margin: 10px;
+    }
 
-.mb-3 {
-    margin-bottom: 24px;
-}
+    .delete-container {
+        padding: 20px;
+    }
 
-.mb-4 {
-    margin-bottom: 32px;
-}
+    .delete-actions {
+        flex-direction: column;
+    }
 
-.mt-0 {
-    margin-top: 0;
-}
-
-.mt-1 {
-    margin-top: 8px;
-}
-
-.mt-2 {
-    margin-top: 16px;
-}
-
-.mt-3 {
-    margin-top: 24px;
-}
-
-.mt-4 {
-    margin-top: 32px;
-}
-
-/* Popup container */
-.popup {
-    position: relative;
-    display: inline-block;
-    cursor: pointer;
-}
-
-/* Backdrop overlay that grays out the background */
-.popup-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: 999;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.popup-backdrop.show {
-    visibility: visible;
-    opacity: 1;
-}
-
-/* The popup container that holds the popup content */
-#item-popup {
-    visibility: hidden;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 90%;
-    max-height: 80vh;
-}
-
-.item-popup {
-    visibility: hidden;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 90%;
-    max-height: 80vh;
-}
-
-/* Show the popup when it has the 'show' class */
-#item-popup.show {
-    visibility: visible;
-    -webkit-animation: fadeIn 0.3s;
-    animation: fadeIn 0.3s;
-}
-
-.item-popup.show {
-    visibility: visible;
-    -webkit-animation: fadeIn 0.3s;
-    animation: fadeIn 0.3s;
+    .delete-actions .btn {
+        width: 100%;
+    }
 }
 
 /* Add animation (fade in the popup) */
