@@ -39,16 +39,11 @@ Password Manager Vault
         }
 
         // Close popup when clicking outside of it
-        window.onclick = function (event) {
+        globalThis.onclick = function (event) {
             let backdrop = document.getElementById("popup-backdrop");
             if (event.target === backdrop) {
                 closePopup();
             }
-        }
-
-        // Toggle password visibility
-        function togglePassword(element) {
-            element.classList.toggle('hidden');
         }
 
         // Show delete confirmation popup
@@ -69,6 +64,17 @@ Password Manager Vault
             // Show the popup
             popup.classList.add("show");
             backdrop.classList.add("show");
+        }
+
+        // Toggle password visibility
+        function togglePassword(itemId) {
+            let item = document.getElementById(itemId);
+            if(item.classList.contains('hidden')) {
+                item.classList.remove('hidden');
+            }
+            else{
+                item.classList.add('hidden');
+            }
         }
 
         // Cancel delete action
@@ -108,11 +114,12 @@ Password Manager Vault
                 </div>
                 <div class="item-field">
                     <span class="item-label">Password</span>
-                    <span class="item-value item-password hidden" onclick="togglePassword(this)">
+                    <span id="{{ item.id }}" class="item-value item-password hidden">
                         <span class="password-text">{{ item.password }}</span>
                     </span>
                 </div>
                 <div class="item-actions">
+                    <button class="btn btn-primary" onclick="togglePassword('{{ item.id }}')">Show</button>
                     <button class="btn btn-primary" onclick="showEditPopup('{{ item.id }}')">Edit</button>
                     <button class="btn btn-danger" onclick="confirmDelete('{{ item.id }}', '{{ item.name }}')">Delete</button>
                 </div>
@@ -130,10 +137,7 @@ Password Manager Vault
         <div id="edit-item-{{ item.id }}" class="edit-popup">
             <div class="form-container">
                 <button onclick="closePopup()" class="close-button">&times;</button>
-                <div class="form-title">
-                    <h1>Edit Item</h1>
-                </div>
-                <h2 class="form-subtitle">Edit Vault Item "{{ item.name }}"</h2>
+                <h2 class="form-title">Edit Vault Item "{{ item.name }}"</h2>
 
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}

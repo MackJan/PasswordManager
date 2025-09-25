@@ -22,12 +22,12 @@ def login_page(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        logger.info(f"Login attempt for email: {email}")
+        logger.info(f"Login attempt.")
 
         # Check if a user with the provided username exists
         if not CustomUser.objects.filter(email=email).exists():
             # Display an error message if the username does not exist
-            logger.warning(f"Login failed - Email not found: {email} from IP: {request.META.get('REMOTE_ADDR')}")
+            logger.warning(f"Login failed - Email not found. from IP: {request.META.get('REMOTE_ADDR')}")
             messages.error(request, 'Invalid Email')
             return redirect('/login/')
 
@@ -36,8 +36,8 @@ def login_page(request):
 
         if user is None:
             # Display an error message if authentication fails (invalid password)
-            logger.warning(f"Login failed - Invalid password for email: {email} from IP: {request.META.get('REMOTE_ADDR')}")
-            alerts_logger.error(f"Multiple failed login attempts detected for email: {email}")
+            logger.warning(f"Login failed - Invalid password from IP: {request.META.get('REMOTE_ADDR')}")
+            alerts_logger.error(f"Failed login attempt detected.")
             messages.error(request, "Invalid Password")
             return redirect('/login/')
         else:
@@ -59,14 +59,14 @@ def register_page(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        logger.info(f"Registration attempt for email: {email}")
+        logger.info(f"Registration attempt.")
 
         # Check if a user with the provided username already exists
         user = CustomUser.objects.filter(email=email)
 
         if user.exists():
             # Display an information message if the username is taken
-            logger.warning(f"Registration failed - Email already exists: {email}")
+            logger.warning(f"Registration failed - Email already exists.")
             messages.info(request, "Username already taken!")
             return redirect('/register/')
 
@@ -80,7 +80,7 @@ def register_page(request):
         user.save()
 
         # Display an information message indicating successful account creation
-        logger.info(f"New user registered successfully: {email}")
+        logger.info(f"New user registered successfully: {user.email}")
         messages.info(request, "Account created Successfully!")
         return redirect('/login/')
 
