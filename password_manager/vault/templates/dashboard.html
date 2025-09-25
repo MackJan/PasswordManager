@@ -33,9 +33,9 @@ Password Manager Vault
             popup.classList.remove("show");
             backdrop.classList.remove("show");
             deletePopup.classList.remove("show");
-            editPopups.forEach(function(editPopup) {
+            for (const editPopup of editPopups) {
                 editPopup.classList.remove("show");
-            });
+            }
         }
 
         // Close popup when clicking outside of it
