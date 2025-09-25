@@ -1,9 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import VaultItem
 from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 import logging
 
 # Get logger for vault app
@@ -125,7 +122,3 @@ def vault_dashboard(request):
         "items": VaultItem.objects.filter(user=request.user),
     }
     return render(request, 'dashboard.html', context=context)
-
-def edit_dashboard(request):
-    # Redirect to main dashboard since we're consolidating everything
-    return redirect('/vault/')
