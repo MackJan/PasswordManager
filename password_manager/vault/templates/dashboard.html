@@ -16,27 +16,64 @@ Password Manager Vault
             backdrop.classList.add("show");
         }
 
+        // Show edit popup for specific item
+        function showEditPopup(itemId) {
+            let popup = document.getElementById("edit-item-" + itemId);
+            let backdrop = document.getElementById("popup-backdrop");
+            popup.classList.add("show");
+            backdrop.classList.add("show");
+        }
+
         // Close the popup
         function closePopup() {
             let popup = document.getElementById("item-popup");
             let backdrop = document.getElementById("popup-backdrop");
+            let editPopups = document.querySelectorAll('.edit-popup');
+            let deletePopup = document.getElementById("delete-confirmation-popup");
             popup.classList.remove("show");
             backdrop.classList.remove("show");
+            deletePopup.classList.remove("show");
+            editPopups.forEach(function(editPopup) {
+                editPopup.classList.remove("show");
+            });
         }
 
         // Close popup when clicking outside of it
         window.onclick = function (event) {
-            let popup = document.getElementById("item-popup");
             let backdrop = document.getElementById("popup-backdrop");
             if (event.target === backdrop) {
-                popup.classList.remove("show");
-                backdrop.classList.remove("show");
+                closePopup();
             }
         }
 
         // Toggle password visibility
         function togglePassword(element) {
             element.classList.toggle('hidden');
+        }
+
+        // Show delete confirmation popup
+        function confirmDelete(itemId, itemName) {
+            let popup = document.getElementById("delete-confirmation-popup");
+            let backdrop = document.getElementById("popup-backdrop");
+            let itemNameSpan = document.getElementById("delete-item-name");
+            let confirmBtn = document.getElementById("confirm-delete-btn");
+
+            // Set the item name in the popup
+            itemNameSpan.textContent = itemName;
+
+            // Set up the confirm button to submit the correct form
+            confirmBtn.onclick = function() {
+                document.getElementById('delete-form-' + itemId).submit();
+            };
+
+            // Show the popup
+            popup.classList.add("show");
+            backdrop.classList.add("show");
+        }
+
+        // Cancel delete action
+        function cancelDelete() {
+            closePopup();
         }
     </script>
 </head>
@@ -75,6 +112,54 @@ Password Manager Vault
                         <span class="password-text">{{ item.password }}</span>
                     </span>
                 </div>
+                <div class="item-actions">
+                    <button class="btn btn-primary" onclick="showEditPopup('{{ item.id }}')">Edit</button>
+                    <button class="btn btn-danger" onclick="confirmDelete('{{ item.id }}', '{{ item.name }}')">Delete</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden delete form for each item -->
+        <form id="delete-form-{{ item.id }}" method="post" style="display: none;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="id" value="{{ item.id }}">
+        </form>
+
+        <!-- Edit popup for each item -->
+        <div id="edit-item-{{ item.id }}" class="edit-popup">
+            <div class="form-container">
+                <button onclick="closePopup()" class="close-button">&times;</button>
+                <div class="form-title">
+                    <h1>Edit Item</h1>
+                </div>
+                <h2 class="form-subtitle">Edit Vault Item "{{ item.name }}"</h2>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="id" value="{{ item.id }}">
+
+                    <div class="form-group">
+                        <label for="edit-name-{{ item.id }}">Name</label>
+                        <input type="text" class="form-control" name="name" id="edit-name-{{ item.id }}"
+                               placeholder="Enter the Items name" value="{{ item.name }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-username-{{ item.id }}">Username</label>
+                        <input type="text" class="form-control" name="username" id="edit-username-{{ item.id }}"
+                               placeholder="Enter the Items username" value="{{ item.username }}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-password-{{ item.id }}">Password</label>
+                        <input type="password" name="password" class="form-control" id="edit-password-{{ item.id }}"
+                               placeholder="Enter the password to store" value="{{ item.password }}" required>
+                    </div>
+
+                    <button type="submit" class="form-button">Update Item</button>
+                </form>
             </div>
         </div>
         {% endfor %}
@@ -85,8 +170,58 @@ Password Manager Vault
     <!-- Backdrop overlay -->
     <div id="popup-backdrop" class="popup-backdrop"></div>
 
+    <!-- Create item popup -->
     <div id="item-popup">
-        {% include "item-creation.html" %}
+        <div class="form-container">
+            <button onclick="closePopup()" class="close-button">&times;</button>
+            <div class="form-title">
+                <h1>Item Creation</h1>
+            </div>
+            <h2 class="form-subtitle">Add a Vault Item</h2>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" name="name" id="name"
+                           placeholder="Enter the Items name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" class="form-control" name="username" id="username"
+                           placeholder="Enter the Items username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" class="form-control" id="password"
+                           placeholder="Enter the password to store" required>
+                </div>
+
+                <button type="submit" class="form-button">Create Item</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete confirmation popup -->
+    <div id="delete-confirmation-popup" class="delete-popup">
+        <div class="delete-container">
+            <button onclick="closePopup()" class="close-button">&times;</button>
+            <div class="delete-title">
+                <h1>⚠️ Confirm Deletion</h1>
+            </div>
+            <div class="delete-message">
+                <p>Are you sure you want to delete "<span id="delete-item-name"></span>"?</p>
+                <p class="warning-text">This action cannot be undone.</p>
+            </div>
+            <div class="delete-actions">
+                <button type="button" class="btn btn-secondary" onclick="cancelDelete()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
