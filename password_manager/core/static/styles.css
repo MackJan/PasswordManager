@@ -242,8 +242,6 @@ body {
     font-size: 16px;
     color: #495057;
     margin: 0;
-    cursor: pointer;
-    user-select: none;
     padding: 4px 8px;
     border-radius: 4px;
     background-color: #e9ecef;
@@ -251,9 +249,6 @@ body {
     transition: all 0.2s ease;
 }
 
-.item-password:hover {
-    background-color: #dee2e6;
-}
 
 .item-password.hidden::after {
     content: "••••••••";
@@ -450,6 +445,132 @@ body {
     color: #0c5460;
 }
 
+/* Form styling */
+.form-container {
+    padding: 32px;
+    background-color: white;
+    border-radius: 8px;
+    max-width: 500px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.form-title {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.form-title h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.form-title h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.form-subtitle {
+    text-align: center;
+    font-size: 16px;
+    color: #6c757d;
+    margin-bottom: 24px;
+    font-weight: 400;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 16px;
+    color: #495057;
+    background-color: #fff;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    background-color: #fff;
+}
+
+.form-control:hover {
+    border-color: #adb5bd;
+}
+
+.form-control::placeholder {
+    color: #adb5bd;
+    opacity: 1;
+}
+
+.form-button {
+    width: 100%;
+    padding: 14px 24px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+}
+
+.form-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2);
+}
+
+.form-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
+/* Close button styling - updated to remove duplicate */
+.close-button {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6c757d;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-button:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .header-container {
@@ -558,6 +679,33 @@ body {
     .delete-actions .btn {
         width: 100%;
     }
+
+    .form-container {
+        padding: 24px;
+        margin: 0 16px 24px;
+    }
+
+    .form-title h1 {
+        font-size: 24px;
+    }
+
+    .form-title h2 {
+        font-size: 20px;
+    }
+
+    .form-subtitle {
+        font-size: 14px;
+    }
+
+    .form-control {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .form-button {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
 }
 
 /* Add animation (fade in the popup) */
@@ -581,13 +729,4 @@ body {
         opacity: 1;
         transform: translate(-50%, -50%) scale(1);
     }
-}
-
-.close-button {
-    float: right;
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #6c757d;
 }
