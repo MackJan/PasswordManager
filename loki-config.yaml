@@ -1,4 +1,4 @@
-auth_enabled: true
+auth_enabled: false
 
 server:
   http_listen_port: 3100
@@ -11,18 +11,17 @@ server:
   grpc_server_max_send_msg_size: 4194304
 
 common:
-  path_prefix: /tmp/loki
+  path_prefix: /loki
   storage:
     filesystem:
-      chunks_directory: /tmp/loki/chunks
-      rules_directory: /tmp/loki/rules
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
   replication_factor: 1
   ring:
     instance_addr: 127.0.0.1
     kvstore:
       store: inmemory
 
-# Multi-tenancy configuration
 distributor:
   ring:
     kvstore:
@@ -56,7 +55,6 @@ schema_config:
         prefix: index_
         period: 24h
 
-# Tenant and authentication limits
 limits_config:
   enforce_metric_name: false
   reject_old_samples: true
@@ -69,25 +67,21 @@ limits_config:
   max_streams_per_user: 10000
   max_line_size: 256000
 
-# Table manager for retention
 table_manager:
   retention_deletes_enabled: true
   retention_period: 168h
 
-# Compactor configuration
 compactor:
-  working_directory: /tmp/loki/boltdb-shipper-compactor
+  working_directory: /loki/boltdb-shipper-compactor
   shared_store: filesystem
 
-# Disable analytics
-analytics:
-  reporting_enabled: false
-
-# Storage configuration
 storage_config:
   boltdb_shipper:
-    active_index_directory: /tmp/loki/boltdb-shipper-active
-    cache_location: /tmp/loki/boltdb-shipper-cache
+    active_index_directory: /loki/boltdb-shipper-active
+    cache_location: /loki/boltdb-shipper-cache
     shared_store: filesystem
   filesystem:
-    directory: /tmp/loki/chunks
+    directory: /loki/chunks
+
+analytics:
+  reporting_enabled: false

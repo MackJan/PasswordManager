@@ -4,13 +4,6 @@ server:
 
 clients:
   - url: http://loki:3100/loki/api/v1/push
-    tenant_id: main
-    headers:
-      X-Scope-OrgID: main
-    # Add authentication header
-    basic_auth:
-      username: promtail
-      password: ${LOKI_API_KEY:-secure_api_key_123}
 
 scrape_configs:
   - job_name: docker

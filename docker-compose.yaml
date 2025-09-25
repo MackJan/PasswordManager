@@ -19,12 +19,13 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml:ro
-      - loki_data:/tmp/loki
+      - loki_data:/loki
     environment:
       - LOKI_API_KEY=secure_api_key_123
     networks:
       - monitoring
     restart: unless-stopped
+    user: "0:0"  # Run as root to avoid permission issues
 
   promtail:
     image: grafana/promtail:2.9.0
