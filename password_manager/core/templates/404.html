@@ -1,10 +1,22 @@
-{% extends "master.html" %}
-
-<title>Wrong address</title>
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 Not Found</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
 <body>
-
-<h1>Ooops!</h1>
-
-<h2>I cannot find the file you requested!</h2>
-
+<div class="main-content">
+    <div class="content-section error-page" role="main" aria-labelledby="error-title">
+        <div class="error-code" aria-hidden="true">404</div>
+        <h1 id="error-title" class="error-title">Page not found</h1>
+        <p class="error-subtitle">We couldn't find the page you're looking for. It may have been moved, renamed, or no longer exists.</p>
+        <div class="error-actions">
+            <a href="/home/" class="btn btn-primary">Go to Home</a>
+        </div>
+    </div>
+</div>
 </body>
+</html>
