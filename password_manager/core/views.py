@@ -14,6 +14,7 @@ def home(request):
     template = loader.get_template('home.html')
     context = {
         "authenticated": request.user.is_authenticated,
+        "user_email": request.user.email,
     }
     return HttpResponse(template.render(context,request))
 

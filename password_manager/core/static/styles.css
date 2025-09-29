@@ -34,6 +34,11 @@ body {
     height: 60px;
 }
 
+.user-email {
+    font-size: 16px;
+    color: #2c3e50;
+}
+
 .brand {
     font-size: 24px;
     font-weight: 600;
@@ -48,8 +53,19 @@ body {
 
 .header-actions {
     display: flex;
-    gap: 12px;
     align-items: center;
+    width: 100%;
+}
+
+.header-actions > a:not(.btn-logout),
+.header-actions > .user-email {
+    margin-right: auto;
+    gap: 12px;
+}
+
+.header-actions .btn-logout,
+.header-actions .user-email {
+    margin-left: auto;
 }
 
 /* Button styles */
@@ -571,6 +587,46 @@ body {
     color: #495057;
 }
 
+/* Error page styles */
+.error-page {
+    text-align: center;
+}
+
+.error-code {
+    font-size: 96px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: #3498db;
+    text-shadow: 0 4px 16px rgba(52, 152, 219, 0.25);
+    margin-bottom: 8px;
+}
+
+.error-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 8px;
+}
+
+.error-subtitle {
+    font-size: 16px;
+    color: #6c757d;
+    margin: 0 auto 24px;
+    max-width: 560px;
+}
+
+.error-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-actions .btn {
+    min-width: 140px;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
     .header-container {
@@ -705,6 +761,23 @@ body {
     .form-button {
         padding: 12px 20px;
         font-size: 14px;
+    }
+
+    .error-code {
+        font-size: 64px;
+        text-shadow: 0 3px 12px rgba(52, 152, 219, 0.25);
+    }
+    .error-title {
+        font-size: 24px;
+    }
+    .error-subtitle {
+        font-size: 14px;
+        margin-bottom: 20px;
+        padding: 0 8px;
+    }
+    .error-actions .btn {
+        width: 100%;
+        max-width: 260px;
     }
 }
 

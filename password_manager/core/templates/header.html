@@ -10,5 +10,9 @@
         {% else %}
             <a href="/logout/" class="btn btn-logout">Logout</a>
         {% endif %}
+
+        {% if authenticated != 0 %}
+        <p class="user-email"> {{ user_email }}</p>
+        {% endif %}
     </div>
 </div>
