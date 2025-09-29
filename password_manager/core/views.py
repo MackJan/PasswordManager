@@ -8,13 +8,14 @@ logger = logging.getLogger('core')
 
 def home(request):
     logger.info(f"Home page accessed from IP: {request.META.get('REMOTE_ADDR')}")
+    user_email = ""
     if request.user.is_authenticated:
         logger.info(f"Authenticated user {request.user.email} accessed home page")
-
+        user_email = request.user.email
     template = loader.get_template('home.html')
     context = {
         "authenticated": request.user.is_authenticated,
-        "user_email": request.user.email if request.is_authenticated else None,
+        "user_email": user_email,
     }
     return HttpResponse(template.render(context,request))
 
