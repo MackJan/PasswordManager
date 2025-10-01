@@ -118,6 +118,18 @@ Password Manager Vault
                         <span class="password-text">{{ item.password }}</span>
                     </span>
                 </div>
+                {% if item.url %}
+                <div class="item-field">
+                    <span class="item-label">URL</span>
+                    <span class="item-value item-url">{{ item.url }}</span>
+                </div>
+                {% endif %}
+                {% if item.notes %}
+                <div class="item-field">
+                    <span class="item-label">Notes</span>
+                    <span class="item-value item-notes">{{ item.notes }}</span>
+                </div>
+                {% endif %}
                 <div class="item-actions">
                     <button class="btn btn-primary" onclick="togglePassword('{{ item.id }}')">Show</button>
                     <button class="btn btn-primary" onclick="showEditPopup('{{ item.id }}')">Edit</button>
@@ -162,6 +174,18 @@ Password Manager Vault
                                placeholder="Enter the password to store" value="{{ item.password }}" required>
                     </div>
 
+                    <div class="form-group">
+                        <label for="edit-url-{{ item.id }}">URL</label>
+                        <input type="url" class="form-control" name="url" id="edit-url-{{ item.id }}"
+                               placeholder="Enter the website URL" value="{{ item.url }}">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-notes-{{ item.id }}">Notes</label>
+                        <textarea class="form-control" name="notes" id="edit-notes-{{ item.id }}"
+                                  placeholder="Enter any additional notes" rows="3">{{ item.notes }}</textarea>
+                    </div>
+
                     <button type="submit" class="form-button">Update Item</button>
                 </form>
             </div>
@@ -203,6 +227,18 @@ Password Manager Vault
                     <label for="password">Password</label>
                     <input type="password" name="password" class="form-control" id="password"
                            placeholder="Enter the password to store" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="url">URL</label>
+                    <input type="url" class="form-control" name="url" id="url"
+                           placeholder="Enter the website URL">
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea class="form-control" name="notes" id="notes"
+                              placeholder="Enter any additional notes" rows="3"></textarea>
                 </div>
 
                 <button type="submit" class="form-button">Create Item</button>

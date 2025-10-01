@@ -113,7 +113,20 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Password hashing - Django's Argon2 is already the default, but we'll be explicit
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
 AUTH_USER_MODEL = "accounts.CustomUser"
+
+# Application Master Key (AMK) configuration
+# In production, set AMK_V1 environment variable to a base64-encoded 32-byte key
+# For development, a default will be generated (NOT SECURE for production)
+AMK_V1 = os.environ.get('AMK_V1')  # Should be base64-encoded 32-byte key
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

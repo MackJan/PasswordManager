@@ -4,3 +4,4 @@ whitenoise
 gunicorn==21.2.0
 django-prometheus
 cryptography
+argon2-cffi
