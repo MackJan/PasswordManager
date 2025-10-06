@@ -31,8 +31,8 @@ def login_page(request):
         if not CustomUser.objects.filter(email=email).exists():
             # Display an error message if the username does not exist
             logger.warning(f"Login failed - Email not found. from IP: {request.META.get('REMOTE_ADDR')}")
-            messages.error(request, 'Invalid Email')
-            return redirect('/login/')
+            messages.error(request, "Email and Password do not match")
+            return redirect("/login/")
 
         # Authenticate the user with the provided username and password
         user = authenticate(email=email, password=password)
@@ -41,16 +41,16 @@ def login_page(request):
             # Display an error message if authentication fails (invalid password)
             logger.warning(f"Login failed - Invalid password from IP: {request.META.get('REMOTE_ADDR')}")
             alerts_logger.error(f"Failed login attempt detected.")
-            messages.error(request, "Invalid Password")
-            return redirect('/login/')
+            messages.error(request, "Email and Password do not match")
+            return redirect("/login/")
         else:
             # Log in the user and redirect to the home page upon successful login
             logger.info(f"Successful login for user: {email}")
             login(request, user)
-            return redirect('/home/')
+            return redirect("/home/")
 
     # Render the login page template (GET request)
-    return render(request, 'login.html')
+    return render(request, "login.html")
 
 
 # Define a view function for the registration page

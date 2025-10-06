@@ -7,8 +7,8 @@ from typing import Dict, Any, Optional, Tuple
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from accounts.models import UserKeystore
-from vault.models import VaultItem
-from vault.crypto_utils import (
+from .models import VaultItem
+from .crypto_utils import (
     generate_key, wrap_umk, unwrap_umk, wrap_dek, unwrap_dek,
     encrypt_item_data, decrypt_item_data, secure_zero, CryptoError
 )
