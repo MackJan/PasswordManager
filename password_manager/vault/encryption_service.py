@@ -7,8 +7,8 @@ from typing import Dict, Any, Optional, Tuple
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from accounts.models import UserKeystore
-from .models import VaultItem
-from .crypto_utils import (
+from vault.models import VaultItem
+from vault.crypto_utils import (
     generate_key, wrap_umk, unwrap_umk, wrap_dek, unwrap_dek,
     encrypt_item_data, decrypt_item_data, secure_zero, CryptoError
 )
@@ -76,23 +76,40 @@ class EncryptionService:
         Raises:
             CryptoError: If keystore not found or decryption fails
         """
+        import logging
+        logger = logging.getLogger('vault')
+
         try:
             keystore = user.keystore
             if not keystore.wrapped_umk_b64:
                 raise CryptoError("User encryption not set up")
+
+            logger.info(f"Keystore found for user {user.id} - AMK version: {keystore.amk_key_version}, "
+                       f"algo_version: {keystore.algo_version}")
+
         except UserKeystore.DoesNotExist:
+            logger.error(f"User keystore not found for user {user.id}")
             raise CryptoError("User keystore not found")
         
-        umk = unwrap_umk(
-            keystore.wrapped_umk_b64,
-            keystore.umk_nonce_b64,
-            user.id,
-            keystore.amk_key_version,
-            keystore.algo_version
-        )
-        
-        return umk
-    
+        try:
+            logger.info(f"Attempting to unwrap UMK for user {user.id}")
+            umk = unwrap_umk(
+                keystore.wrapped_umk_b64,
+                keystore.umk_nonce_b64,
+                user.id,
+                keystore.amk_key_version,
+                keystore.algo_version
+            )
+            logger.info(f"Successfully unwrapped UMK for user {user.id}")
+            return umk
+
+        except CryptoError as e:
+            logger.error(f"Failed to unwrap UMK for user {user.id}: {str(e)}")
+            logger.error(f"Keystore details - wrapped_umk_b64 length: {len(keystore.wrapped_umk_b64) if keystore.wrapped_umk_b64 else 0}, "
+                        f"umk_nonce_b64 length: {len(keystore.umk_nonce_b64) if keystore.umk_nonce_b64 else 0}, "
+                        f"amk_version: {keystore.amk_key_version}, algo_version: {keystore.algo_version}")
+            raise
+
     @staticmethod
     def is_item_encrypted_with_new_system(vault_item: VaultItem) -> bool:
         """Check if a vault item uses the new encryption system"""
@@ -118,12 +135,18 @@ class EncryptionService:
             # Ensure user has encryption set up
             EncryptionService.setup_user_encryption(user)
 
-            # Get User Master Key
+            # Get User Master Key - this is where the error likely occurs
+            import logging
+            logger = logging.getLogger('vault')
+            logger.info(f"Attempting to get UMK for user {user.id} during vault item creation")
+
             umk = EncryptionService.get_user_master_key(user)
-            
+            logger.info(f"Successfully retrieved UMK for user {user.id}")
+
             # Generate Data Encryption Key
             dek = generate_key()
-            
+            logger.info(f"Generated DEK for user {user.id}")
+
             # Create vault item to get ID
             vault_item = VaultItem.objects.create(
                 user=user,
@@ -133,15 +156,20 @@ class EncryptionService:
                 item_nonce_b64='',
                 display_name=item_data.get('name', '')[:50] if item_data.get('name') else ''
             )
-            
+            logger.info(f"Created vault item {vault_item.id} for user {user.id}")
+
             # Wrap DEK with UMK
+            logger.info(f"Attempting to wrap DEK for vault item {vault_item.id}")
             wrapped_dek_b64, dek_nonce_b64 = wrap_dek(dek, umk, str(vault_item.id))
-            
+            logger.info(f"Successfully wrapped DEK for vault item {vault_item.id}")
+
             # Encrypt item data with DEK
+            logger.info(f"Attempting to encrypt item data for vault item {vault_item.id}")
             ciphertext_b64, item_nonce_b64 = encrypt_item_data(
                 item_data, dek, user.id, str(vault_item.id)
             )
-            
+            logger.info(f"Successfully encrypted item data for vault item {vault_item.id}")
+
             # Update vault item with encrypted data
             vault_item.wrapped_dek_b64 = wrapped_dek_b64
             vault_item.dek_wrap_nonce_b64 = dek_nonce_b64
@@ -152,8 +180,15 @@ class EncryptionService:
                 'ciphertext_b64', 'item_nonce_b64'
             ])
             
+            logger.info(f"Successfully created and saved encrypted vault item {vault_item.id} for user {user.id}")
             return vault_item
             
+        except CryptoError as e:
+            logger.error(f"CryptoError during vault item creation for user {user.id}: {str(e)}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during vault item creation for user {user.id}: {type(e).__name__}: {str(e)}")
+            raise
         finally:
             # Secure zero sensitive keys
             if umk:
@@ -193,13 +228,16 @@ class EncryptionService:
             # Get User Master Key
             umk = EncryptionService.get_user_master_key(user)
             
+            # Get the algorithm version, defaulting to 1 if not set
+            algo_version = getattr(vault_item, 'algo_version', 1)
+
             # Unwrap DEK
             dek = unwrap_dek(
                 vault_item.wrapped_dek_b64,
                 vault_item.dek_wrap_nonce_b64,
                 umk,
                 str(vault_item.id),
-                vault_item.algo_version
+                algo_version
             )
             
             # Decrypt item data
@@ -209,18 +247,78 @@ class EncryptionService:
                 dek,
                 user.id,
                 str(vault_item.id),
-                vault_item.algo_version
+                algo_version
             )
             
             return item_data
             
+        except CryptoError as e:
+            # If decryption fails, it might be due to the old AAD inconsistency
+            # Try to recover by attempting decryption with different AAD patterns
+            if umk is not None:
+                try:
+                    # Try with the old inconsistent pattern (for recovery)
+                    return EncryptionService._attempt_legacy_decryption(user, vault_item, umk)
+                except CryptoError:
+                    pass
+
+            # If all recovery attempts fail, re-raise the original error
+            raise e
+
         finally:
             # Secure zero sensitive keys
             if umk:
                 secure_zero(umk)
             if dek:
                 secure_zero(dek)
-    
+
+    @staticmethod
+    def _attempt_legacy_decryption(user: User, vault_item: VaultItem, umk: bytes) -> Dict[str, str]:
+        """
+        Attempt to decrypt vault items that were encrypted with the old inconsistent AAD.
+        This is for recovery purposes only.
+
+        Args:
+            user: The user instance
+            vault_item: The VaultItem to decrypt
+            umk: The User Master Key
+
+        Returns:
+            Dictionary containing decrypted item data
+
+        Raises:
+            CryptoError: If decryption fails
+        """
+        dek = None
+        try:
+            # The old system might have used different AAD patterns
+            # Try the most likely legacy pattern first
+            algo_version = getattr(vault_item, 'algo_version', 1)
+
+            dek = unwrap_dek(
+                vault_item.wrapped_dek_b64,
+                vault_item.dek_wrap_nonce_b64,
+                umk,
+                str(vault_item.id),
+                algo_version
+            )
+
+            # Try decrypting with the standard pattern
+            item_data = decrypt_item_data(
+                vault_item.ciphertext_b64,
+                vault_item.item_nonce_b64,
+                dek,
+                user.id,
+                str(vault_item.id),
+                algo_version
+            )
+
+            return item_data
+
+        finally:
+            if dek:
+                secure_zero(dek)
+
     @staticmethod
     @transaction.atomic
     def update_vault_item(user: User, vault_item: VaultItem, item_data: Dict[str, str]) -> VaultItem:

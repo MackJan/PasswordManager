@@ -36,13 +36,18 @@ class AMKManager:
 
     def _load_amks(self):
         """Load AMKs from file storage or environment variables"""
+        import logging
+        logger = logging.getLogger('vault')
+
         # First try to load from environment variable (for production/docker)
         amk_v1 = os.environ.get('AMK_V1')
         if amk_v1:
             try:
                 self._amk_cache[1] = base64.b64decode(amk_v1)
+                logger.info("Successfully loaded AMK from environment variable AMK_V1")
                 return
             except Exception as e:
+                logger.error(f"Invalid AMK_V1 environment variable: {e}")
                 raise CryptoError(f"Invalid AMK_V1 environment variable: {e}")
 
         # Try to load from persistent file
@@ -53,17 +58,21 @@ class AMKManager:
                     for version_str, key_b64 in amk_data.items():
                         version = int(version_str)
                         self._amk_cache[version] = base64.b64decode(key_b64)
+                logger.info(f"Successfully loaded AMK from file: {self._amk_file_path}")
+                logger.info(f"Loaded AMK versions: {list(self._amk_cache.keys())}")
                 return
             except Exception as e:
+                logger.error(f"Failed to load AMK from file {self._amk_file_path}: {e}")
                 # If file is corrupted, backup and regenerate
                 backup_path = self._amk_file_path.with_suffix('.backup')
                 try:
                     self._amk_file_path.rename(backup_path)
-                    print(f"Warning: Corrupted AMK file backed up to {backup_path}")
+                    logger.warning(f"Corrupted AMK file backed up to {backup_path}")
                 except:
                     pass
 
         # Generate new AMK and save it
+        logger.warning("No valid AMK found, generating new AMK")
         self._generate_and_save_amk()
 
     def _generate_and_save_amk(self):
@@ -93,8 +102,14 @@ class AMKManager:
 
     def get_amk(self, version: int = 1) -> bytes:
         """Get AMK by version"""
+        import logging
+        logger = logging.getLogger('vault')
+
         if version not in self._amk_cache:
+            logger.error(f"AMK version {version} not found. Available versions: {list(self._amk_cache.keys())}")
             raise CryptoError(f"AMK version {version} not found")
+
+        logger.debug(f"Retrieved AMK version {version}")
         return self._amk_cache[version]
 
     def get_latest_version(self) -> int:
@@ -189,8 +204,19 @@ def aead_decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes = b'') 
         aesgcm = AESGCM(key)
         plaintext = aesgcm.decrypt(nonce, ciphertext, aad)
         return plaintext
-    except InvalidTag:
+    except InvalidTag as e:
+        # Enhanced error reporting for production debugging
+        import logging
+        logger = logging.getLogger('vault')
+        logger.error(f"AEAD Authentication failed - Key length: {len(key)}, Nonce length: {len(nonce)}, "
+                    f"Ciphertext length: {len(ciphertext)}, AAD: {aad.decode('utf-8', errors='replace')}")
         raise CryptoError("Authentication failed - data may be corrupted or tampered with")
+    except Exception as e:
+        # Log any other unexpected errors
+        import logging
+        logger = logging.getLogger('vault')
+        logger.error(f"Unexpected AEAD error: {type(e).__name__}: {str(e)}")
+        raise CryptoError(f"Decryption failed: {str(e)}")
 
 
 def create_aad(user_id: int, item_id: str = None, algo_version: int = 1, amk_version: int = None) -> bytes:

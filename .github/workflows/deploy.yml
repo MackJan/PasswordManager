@@ -97,6 +97,7 @@ jobs:
           CSRF_TRUSTED_ORIGINS=${{ secrets.CSRF_TRUSTED_ORIGINS }}
           GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}
           LOKI_API_KEY=${{ secrets.LOKI_API_KEY }}
+          AMK_V1=${{ secrets.AMK_V1 }}
           EOF
           
           # Pull the latest image explicitly
