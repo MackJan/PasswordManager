@@ -10,6 +10,7 @@ from typing import Dict, Any, Tuple, Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.exceptions import InvalidTag
 from django.conf import settings
+from pathlib import Path
 
 
 class CryptoError(Exception):
@@ -18,22 +19,77 @@ class CryptoError(Exception):
 
 
 class AMKManager:
-    """Application Master Key manager"""
+    """Application Master Key manager with persistent storage"""
 
     def __init__(self):
         self._amk_cache = {}
+        self._amk_file_path = self._get_amk_file_path()
         self._load_amks()
 
+    def _get_amk_file_path(self) -> Path:
+        """Get the path where AMK should be stored"""
+        # Store in the same directory as the Django project
+        base_dir = Path(settings.BASE_DIR)
+        amk_dir = base_dir / '.keys'
+        amk_dir.mkdir(exist_ok=True, mode=0o700)  # Create directory with restricted permissions
+        return amk_dir / 'amk.key'
+
     def _load_amks(self):
-        """Load AMKs from environment variables or secure storage"""
-        # In production, load from secure file storage
-        # For now, use environment variables with fallback
+        """Load AMKs from file storage or environment variables"""
+        # First try to load from environment variable (for production/docker)
         amk_v1 = os.environ.get('AMK_V1')
         if amk_v1:
-            self._amk_cache[1] = base64.b64decode(amk_v1)
-        else:
-            # Generate a default AMK for development (DO NOT USE IN PRODUCTION)
-            self._amk_cache[1] = os.urandom(32)
+            try:
+                self._amk_cache[1] = base64.b64decode(amk_v1)
+                return
+            except Exception as e:
+                raise CryptoError(f"Invalid AMK_V1 environment variable: {e}")
+
+        # Try to load from persistent file
+        if self._amk_file_path.exists():
+            try:
+                with open(self._amk_file_path, 'r') as f:
+                    amk_data = json.load(f)
+                    for version_str, key_b64 in amk_data.items():
+                        version = int(version_str)
+                        self._amk_cache[version] = base64.b64decode(key_b64)
+                return
+            except Exception as e:
+                # If file is corrupted, backup and regenerate
+                backup_path = self._amk_file_path.with_suffix('.backup')
+                try:
+                    self._amk_file_path.rename(backup_path)
+                    print(f"Warning: Corrupted AMK file backed up to {backup_path}")
+                except:
+                    pass
+
+        # Generate new AMK and save it
+        self._generate_and_save_amk()
+
+    def _generate_and_save_amk(self):
+        """Generate a new AMK and save it to persistent storage"""
+        # Generate new AMK
+        new_amk = os.urandom(32)
+        self._amk_cache[1] = new_amk
+
+        # Save to file
+        try:
+            amk_data = {}
+            for version, key in self._amk_cache.items():
+                amk_data[str(version)] = base64.b64encode(key).decode('ascii')
+
+            # Write with restricted permissions
+            with open(self._amk_file_path, 'w') as f:
+                json.dump(amk_data, f, indent=2)
+
+            # Set file permissions to be readable only by owner
+            self._amk_file_path.chmod(0o600)
+
+            print(f"Generated new AMK and saved to {self._amk_file_path}")
+            print("IMPORTANT: Backup this file securely - without it, encrypted data cannot be recovered!")
+
+        except Exception as e:
+            raise CryptoError(f"Failed to save AMK to file: {e}")
 
     def get_amk(self, version: int = 1) -> bytes:
         """Get AMK by version"""
@@ -44,6 +100,34 @@ class AMKManager:
     def get_latest_version(self) -> int:
         """Get the latest AMK version"""
         return max(self._amk_cache.keys()) if self._amk_cache else 1
+
+    def rotate_amk(self) -> int:
+        """Generate a new AMK version for key rotation"""
+        latest_version = self.get_latest_version()
+        new_version = latest_version + 1
+
+        # Generate new AMK
+        new_amk = os.urandom(32)
+        self._amk_cache[new_version] = new_amk
+
+        # Save to file
+        try:
+            amk_data = {}
+            for version, key in self._amk_cache.items():
+                amk_data[str(version)] = base64.b64encode(key).decode('ascii')
+
+            with open(self._amk_file_path, 'w') as f:
+                json.dump(amk_data, f, indent=2)
+
+            self._amk_file_path.chmod(0o600)
+
+            print(f"Generated new AMK version {new_version}")
+            return new_version
+
+        except Exception as e:
+            # Remove the new key from cache if save failed
+            del self._amk_cache[new_version]
+            raise CryptoError(f"Failed to save new AMK version: {e}")
 
 
 # Global AMK manager instance
@@ -205,7 +289,8 @@ def wrap_dek(dek: bytes, umk: bytes, item_id: str, algo_version: int = 1) -> Tup
     Returns:
         Tuple of (wrapped_dek_b64, nonce_b64)
     """
-    aad = create_aad(0, item_id=item_id, algo_version=algo_version)  # user_id not needed for DEK wrapping
+    # Use user_id=0 for DEK wrapping operations consistently
+    aad = create_aad(0, item_id=item_id, algo_version=algo_version)
     nonce, ciphertext = aead_encrypt(umk, dek, aad)
 
     return (
@@ -230,7 +315,8 @@ def unwrap_dek(wrapped_dek_b64: str, nonce_b64: str, umk: bytes, item_id: str, a
     """
     wrapped_dek = base64.b64decode(wrapped_dek_b64)
     nonce = base64.b64decode(nonce_b64)
-    aad = create_aad(0, item_id=item_id, algo_version=algo_version)  # user_id not needed for DEK wrapping
+    # Use user_id=0 for DEK wrapping operations consistently
+    aad = create_aad(0, item_id=item_id, algo_version=algo_version)
 
     dek = aead_decrypt(umk, nonce, wrapped_dek, aad)
 
