@@ -16,12 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
-    path('',include('accounts.urls')),
-    path('',include('vault.urls')),
-    path("", include("django_prometheus.urls")),  # /metrics endpoint
-]
+    path('vault/', include('vault.urls')),
+    path('', include('django_prometheus.urls')),  # /metrics endpoint
+    path('accounts/', include('allauth.urls')),  # allauth authentication URLs
+    path('profile/', include('accounts.urls')),  # Custom account management views
 
+    # Legacy redirects for old authentication URLs
+    path('login/', RedirectView.as_view(url='/accounts/login/', permanent=True)),
+    path('register/', RedirectView.as_view(url='/accounts/signup/', permanent=True)),
+    path('logout/', RedirectView.as_view(url='/accounts/logout/', permanent=True)),
+]

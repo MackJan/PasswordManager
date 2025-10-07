@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager - Recovery Code</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
+</head>
+<body class="form-page">
+    <div class="form-container">
+        <div class="form-title">
+            <h1>Password Manager</h1>
+        </div>
+
+        <h2 class="form-subtitle">Recovery Code Authentication</h2>
+
+        <!-- Display messages -->
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-content">
+            <p>Enter one of your recovery codes to complete authentication:</p>
+
+            <form method="post" action="{% url 'recovery_code_login' %}">
+                {% csrf_token %}
+                <!-- Hidden field to pass the user's email from the session or context -->
+                {% if user_email %}
+                    <input type="hidden" name="email" value="{{ user_email }}">
+                {% else %}
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email"
+                               id="email"
+                               name="email"
+                               class="form-control"
+                               placeholder="Enter your email address"
+                               required>
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="recovery_code">Recovery Code</label>
+                    <input type="text"
+                           id="recovery_code"
+                           name="recovery_code"
+                           class="form-control"
+                           placeholder="XXXX-XXXX"
+                           maxlength="9"
+                           pattern="[A-Z0-9]{4}-[A-Z0-9]{4}"
+                           style="text-transform: uppercase; font-family: monospace;"
+                           required>
+                    <small class="form-text">Enter the code in XXXX-XXXX format</small>
+                </div>
+
+                <button type="submit" class="form-button">Verify Recovery Code</button>
+            </form>
+
+            <div class="form-footer">
+                <p><a href="{% url 'account_login' %}">← Back to login</a></p>
+                <p>Don't have recovery codes? Contact support for assistance.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-format recovery code input
+        document.getElementById('recovery_code').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^A-Z0-9]/g, '').substring(0, 8);
+            if (value.length > 4) {
+                value = value.substring(0, 4) + '-' + value.substring(4);
+            }
+            e.target.value = value;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager - Setup 2FA</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
+</head>
+<body class="form-page">
+    <div class="form-container">
+        <div class="form-title">
+            <h1>Password Manager</h1>
+        </div>
+
+        <h2 class="form-subtitle">Setup Two-Factor Authentication</h2>
+
+        <!-- Display messages -->
+        {% if messages %}
+        <div class="alert alert-primary" role="alert">
+            {% for message in messages %}
+            {{ message }}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="form-content">
+            <p>To enhance your account security, please set up two-factor authentication using an authenticator app.</p>
+
+            <div class="qr-code-section">
+                <h3>Step 1: Scan QR Code</h3>
+                <p>Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):</p>
+                <div class="qr-code">
+                    {{ qr_code|safe }}
+                </div>
+
+                <h3>Step 2: Enter Verification Code</h3>
+                <p>Enter the 6-digit code from your authenticator app:</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="{{ form.code.id_for_label }}">Authentication Code</label>
+                        {{ form.code }}
+                        {% if form.code.errors %}
+                            <div class="form-error">{{ form.code.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="form-button">Verify and Enable 2FA</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <p><a href="{% url 'account_login' %}">Skip for now</a></p>
+        </div>
+    </div>
+</body>
+</html>
