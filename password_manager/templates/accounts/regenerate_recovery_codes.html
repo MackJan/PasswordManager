@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager - Regenerate Recovery Codes</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <div class="container">
+        <div class="form-container" style="max-width: 500px;">
+            <div class="form-title">
+                <h1>Regenerate Recovery Codes</h1>
+            </div>
+
+            <div class="regenerate-section">
+                <div class="warning-notice">
+                    <h2>⚠️ Important Warning</h2>
+                    <p>Regenerating recovery codes will invalidate all your current recovery codes. Any existing codes you have saved will no longer work.</p>
+                    <p><strong>Make sure you're ready to save the new codes before proceeding.</strong></p>
+                </div>
+
+                <div class="info-section">
+                    <h3>What happens when you regenerate codes:</h3>
+                    <ul>
+                        <li>All current recovery codes become invalid</li>
+                        <li>New recovery codes will be generated</li>
+                        <li>You'll need to save the new codes safely</li>
+                        <li>Your authenticator app will continue to work normally</li>
+                    </ul>
+                </div>
+
+                <form method="post" class="regenerate-form">
+                    {% csrf_token %}
+                    <div class="confirmation-section">
+                        <div class="checkbox-container">
+                            <input type="checkbox" id="understand-warning" onchange="toggleGenerate()">
+                            <label for="understand-warning">
+                                I understand that my current recovery codes will become invalid
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" id="generate-btn" class="btn btn-primary" disabled>
+                            Generate New Recovery Codes
+                        </button>
+                        <a href="{% url 'security_settings' %}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .regenerate-section {
+            margin: 20px 0;
+        }
+
+        .warning-notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .warning-notice h2 {
+            color: #856404;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .warning-notice p {
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .info-section {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .info-section h3 {
+            color: #1565c0;
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        .info-section ul {
+            color: #1565c0;
+            margin-bottom: 0;
+        }
+
+        .info-section li {
+            margin-bottom: 8px;
+        }
+
+        .regenerate-form {
+            background-color: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .confirmation-section {
+            margin-bottom: 24px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            margin-top: 4px;
+            transform: scale(1.2);
+        }
+
+        .checkbox-container label {
+            font-size: 16px;
+            color: #495057;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        #generate-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
+
+    <script>
+        function toggleGenerate() {
+            const checkbox = document.getElementById('understand-warning');
+            const generateBtn = document.getElementById('generate-btn');
+            generateBtn.disabled = !checkbox.checked;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager - Security Settings</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <div class="container">
+        <div class="security-container">
+            <h1>Security Settings</h1>
+
+            <!-- Display messages -->
+            {% if messages %}
+            <div class="messages">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Two-Factor Authentication Section -->
+            <div class="security-section">
+                <div class="security-header">
+                    <h2>Two-Factor Authentication (2FA)</h2>
+                    {% if mfa_enabled %}
+                        <span class="status-badge enabled">✓ Enabled</span>
+                    {% else %}
+                        <span class="status-badge disabled">⚠ Disabled</span>
+                    {% endif %}
+                </div>
+
+                <div class="security-content">
+                    {% if mfa_enabled %}
+                        <p>Your account is protected with two-factor authentication. You'll need to enter a code from your authenticator app when logging in.</p>
+
+                        <div class="mfa-info">
+                            <h3>Active Authenticators</h3>
+                            {% for authenticator in totp_authenticators %}
+                                <div class="authenticator-item">
+                                    <span class="authenticator-type">📱 Authenticator App</span>
+                                    <span class="authenticator-date">Added: {{ authenticator.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            {% endfor %}
+
+                            {% if has_recovery_codes %}
+                                <div class="recovery-codes-info">
+                                    <span class="recovery-icon">🔑</span>
+                                    <span>Recovery codes are set up</span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="security-actions">
+                            <a href="{% url 'regenerate_recovery_codes' %}" class="btn btn-secondary">
+                                Regenerate Recovery Codes
+                            </a>
+                            <form method="post" action="{% url 'disable_2fa' %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger"
+                                        onclick="return confirm('Are you sure you want to disable 2FA? This will make your account less secure.')">
+                                    Disable 2FA
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <p>Two-factor authentication adds an extra layer of security to your account. When enabled, you'll need to enter a code from your phone in addition to your password.</p>
+
+                        <div class="enable-2fa-info">
+                            <h3>How it works:</h3>
+                            <ol>
+                                <li>Install an authenticator app like Google Authenticator or Authy</li>
+                                <li>Scan the QR code we provide</li>
+                                <li>Enter the 6-digit code to verify setup</li>
+                                <li>Save your recovery codes in a safe place</li>
+                            </ol>
+                        </div>
+
+                        <div class="security-actions">
+                            <a href="{% url 'enable_2fa' %}" class="btn btn-primary">Enable 2FA</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Password Security Section -->
+            <div class="security-section">
+                <div class="security-header">
+                    <h2>Password Security</h2>
+                </div>
+                <div class="security-content">
+                    <p>Keep your account secure by using a strong, unique password.</p>
+                    <div class="security-actions">
+                        <a href="{% url 'account_change_password' %}" class="btn btn-secondary">Change Password</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="navigation-section">
+                <a href="{% url 'profile' %}" class="btn btn-outline">← Back to Profile</a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .security-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .security-section {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .security-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .security-header h2 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-badge.enabled {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.disabled {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .mfa-info {
+            background-color: #f8f9fa;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+
+        .authenticator-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .authenticator-item:last-child {
+            border-bottom: none;
+        }
+
+        .recovery-codes-info {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .enable-2fa-info {
+            background-color: #e3f2fd;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+
+        .enable-2fa-info h3 {
+            margin-top: 0;
+            color: #1565c0;
+        }
+
+        .enable-2fa-info ol {
+            margin-bottom: 0;
+            color: #1565c0;
+        }
+
+        .security-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            border: 1px solid #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #6c757d;
+            border: 1px solid #6c757d;
+        }
+
+        .btn-outline:hover {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .navigation-section {
+            text-align: center;
+            margin-top: 24px;
+        }
+    </style>
+</body>
+</html>

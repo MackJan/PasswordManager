@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Manager - Recovery Codes</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
+</head>
+<body class="form-page">
+    <div class="form-container">
+        <div class="form-title">
+            <h1>Password Manager</h1>
+        </div>
+
+        <h2 class="form-subtitle">Recovery Codes</h2>
+
+        <div class="form-content">
+            <p><strong>Important:</strong> Save these recovery codes in a safe place. You can use them to access your account if you lose access to your authenticator app.</p>
+
+            <div class="recovery-codes">
+                {% for code in recovery_codes %}
+                    <div class="recovery-code">{{ code }}</div>
+                {% endfor %}
+            </div>
+
+            <p>Each code can only be used once. We recommend printing or writing these down and storing them securely.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="form-button">I've saved my recovery codes</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
