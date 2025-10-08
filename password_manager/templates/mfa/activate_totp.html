@@ -32,6 +32,7 @@
                 <p>Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):</p>
                 <div class="qr-code">
                     {{ qr_code|safe }}
+                    {% autoescape off %}
                 </div>
 
                 <h3>Step 2: Enter Verification Code</h3>

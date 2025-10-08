@@ -49,7 +49,7 @@ def login_page(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        logger.info(f"Login attempt.")
+        logger.info("Login attempt.")
 
         # Check if a user with the provided username exists
         if not CustomUser.objects.filter(email=email).exists():
@@ -64,7 +64,7 @@ def login_page(request):
         if user is None:
             # Display an error message if authentication fails (invalid password)
             logger.warning(f"Login failed - Invalid password from IP: {request.META.get('REMOTE_ADDR')}")
-            alerts_logger.error(f"Failed login attempt detected.")
+            alerts_logger.error("Failed login attempt detected.")
             messages.error(request, "Email and Password do not match")
             return redirect("/login/")
         else:

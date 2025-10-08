@@ -31,7 +31,7 @@ class Command(BaseCommand):
         # For existing users, create EmailAddress entries
         users_updated = 0
         for user in CustomUser.objects.all():
-            email_address, created = EmailAddress.objects.get_or_create(
+            _, created = EmailAddress.objects.get_or_create(
                 user=user,
                 email=user.email,
                 defaults={

@@ -116,30 +116,43 @@
     text-decoration: underline;
 }
 
-/* Alert messages */
+/* Alert messages - Consolidated */
 .alert {
     padding: 12px 16px;
     border-radius: 6px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    border: 1px solid transparent;
     font-size: 14px;
 }
 
 .alert-primary {
-    background-color: #e3f2fd;
-    border: 1px solid #bbdefb;
-    color: #1565c0;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
 }
 
-.alert-danger {
-    background-color: #ffebee;
-    border: 1px solid #ffcdd2;
-    color: #c62828;
+.alert-danger, .alert-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
 }
 
 .alert-success {
-    background-color: #e8f5e8;
-    border: 1px solid #c8e6c9;
-    color: #2e7d32;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
 }
 
 /* Back to home link */
@@ -257,19 +270,6 @@
     border: 1px solid #dee2e6;
     font-weight: bold;
     text-align: center;
-}
-
-.alert {
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-    border: 1px solid transparent;
-}
-
-.alert-primary {
-    background-color: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
 }
 
 .form-content {
@@ -410,37 +410,6 @@ input[type="text"]:focus {
 
 .messages {
     margin-bottom: 20px;
-}
-
-.alert {
-    padding: 12px 16px;
-    border-radius: 6px;
-    margin-bottom: 16px;
-    border: 1px solid transparent;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
-}
-
-.alert-warning {
-    background-color: #fff3cd;
-    border-color: #ffeaa7;
-    color: #856404;
-}
-
-.alert-error, .alert-danger {
-    background-color: #f8d7da;
-    border-color: #f5c6cb;
-    color: #721c24;
-}
-
-.alert-info {
-    background-color: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
 }
 
 /* Button Styles */
