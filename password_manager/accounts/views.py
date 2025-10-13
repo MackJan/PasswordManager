@@ -16,8 +16,7 @@ from vault.encryption_service import EncryptionService
 from vault.crypto_utils import CryptoError
 from core.logging_utils import get_accounts_logger
 import qrcode
-import qrcode.image.svg
-from io import BytesIO
+import io
 import base64
 import secrets
 import string
@@ -35,6 +34,19 @@ def generate_recovery_codes(count=10):
         formatted_code = f"{code[:4]}-{code[4:]}"
         codes.append(formatted_code)
     return codes
+
+
+def get_recovery_codes_data(codes):
+    """
+    Generate the data structure that allauth expects for recovery codes
+    """
+    # Generate a seed for the recovery codes
+    seed = secrets.token_bytes(32)
+    
+    return {
+        'seed': seed.hex(),  # This is what allauth expects
+        'unused_codes': codes  # Keep this for compatibility with existing views
+    }
 
 
 def logout_page(request):
@@ -102,10 +114,12 @@ def enable_2fa(request):
                 data={'secret': secret}
             )
             codes = generate_recovery_codes()
+            # Use the proper data structure with 'seed' key
+            recovery_data = get_recovery_codes_data(codes)
             Authenticator.objects.create(
                 user=user,
                 type=Authenticator.Type.RECOVERY_CODES,
-                data={'unused_codes': codes}
+                data=recovery_data
             )
             del request.session['totp_secret']
             logger.info(f"2FA enabled for user: {user.email}")
@@ -120,16 +134,19 @@ def enable_2fa(request):
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(totp_uri)
     qr.make(fit=True)
+
+    # Convert QR code to base64 string
     img = qr.make_image(fill_color="black", back_color="white")
-    buffer = BytesIO()
+    buffer = io.BytesIO()
     img.save(buffer, format='PNG')
-    img_data = base64.b64encode(buffer.getvalue()).decode()
+    buffer.seek(0)
+    qr_code_data = base64.b64encode(buffer.getvalue()).decode()
 
     context = {
         'secret': secret,
-        'qr_code_data': img_data,
-        'totp_uri': totp_uri,
+        'qr_code': qr_code_data,
     }
+
     return render(request, 'accounts/enable_2fa.html', context)
 
 @login_required
@@ -157,16 +174,17 @@ def regenerate_recovery_codes(request):
     if request.method == 'POST':
         # Generate new recovery codes
         codes = generate_recovery_codes()
+        recovery_data = get_recovery_codes_data(codes)
 
         # Update or create recovery codes authenticator
         recovery_auth, created = Authenticator.objects.get_or_create(
             user=user,
             type=Authenticator.Type.RECOVERY_CODES,
-            defaults={'data': {'unused_codes': codes}}
+            defaults={'data': recovery_data}
         )
 
         if not created:
-            recovery_auth.data = {'unused_codes': codes}
+            recovery_auth.data = recovery_data
             recovery_auth.save()
 
         logger.info(f"Recovery codes regenerated for user: {user.email}")
