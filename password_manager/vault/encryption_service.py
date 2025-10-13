@@ -3,7 +3,7 @@ Encryption service layer for password manager.
 Handles registration, login, and vault encryption workflows.
 """
 
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from accounts.models import UserKeystore
@@ -12,9 +12,11 @@ from vault.crypto_utils import (
     generate_key, wrap_umk, unwrap_umk, wrap_dek, unwrap_dek,
     encrypt_item_data, decrypt_item_data, secure_zero, CryptoError
 )
+from core.logging_utils import get_vault_logger
 
 User = get_user_model()
 
+logger = get_vault_logger()
 
 class EncryptionService:
     """Service for handling encryption workflows"""
@@ -31,6 +33,7 @@ class EncryptionService:
         try:
             # Check if keystore already exists
             if hasattr(user, 'keystore') and user.keystore.wrapped_umk_b64:
+                logger.info("Encryption already set up for user", user)
                 return  # Already set up
 
             # Generate User Master Key
@@ -50,23 +53,29 @@ class EncryptionService:
                 }
             )
 
-            if not created and not keystore.wrapped_umk_b64:
-                # Update existing empty keystore
+            if not created:
+                # Update existing keystore
                 keystore.amk_key_version = amk_version
                 keystore.wrapped_umk_b64 = wrapped_umk_b64
                 keystore.umk_nonce_b64 = nonce_b64
+                keystore.algo_version = 1
                 keystore.save()
 
+            logger.encryption_event("user encryption setup completed", user, success=True)
+
+        except Exception as e:
+            logger.encryption_event(f"user encryption setup failed: {str(e)}", user, success=False)
+            raise CryptoError(f"Failed to set up user encryption: {str(e)}")
         finally:
-            # Secure zero the UMK
+            # Secure cleanup
             if 'umk' in locals():
                 secure_zero(umk)
-    
+
     @staticmethod
-    def get_user_master_key(user: User) -> bytes:
+    def _get_user_master_key(user: User) -> bytes:
         """
-        Retrieve and decrypt the User Master Key for a user.
-        
+        Retrieve and unwrap the User Master Key for a user.
+
         Args:
             user: The user instance
             
@@ -76,23 +85,20 @@ class EncryptionService:
         Raises:
             CryptoError: If keystore not found or decryption fails
         """
-        import logging
-        logger = logging.getLogger('vault')
 
         try:
             keystore = user.keystore
             if not keystore.wrapped_umk_b64:
                 raise CryptoError("User encryption not set up")
 
-            logger.info(f"Keystore found for user {user.id} - AMK version: {keystore.amk_key_version}, "
-                       f"algo_version: {keystore.algo_version}")
+            logger.encryption_event(f"keystore found - AMK version: {keystore.amk_key_version}, algo_version: {keystore.algo_version}", user)
 
         except UserKeystore.DoesNotExist:
-            logger.error(f"User keystore not found for user {user.id}")
+            logger.error("User keystore not found", user)
             raise CryptoError("User keystore not found")
         
         try:
-            logger.info(f"Attempting to unwrap UMK for user {user.id}")
+            logger.encryption_event("attempting to unwrap UMK", user)
             umk = unwrap_umk(
                 keystore.wrapped_umk_b64,
                 keystore.umk_nonce_b64,
@@ -100,14 +106,14 @@ class EncryptionService:
                 keystore.amk_key_version,
                 keystore.algo_version
             )
-            logger.info(f"Successfully unwrapped UMK for user {user.id}")
+            logger.encryption_event("successfully unwrapped UMK", user)
             return umk
 
         except CryptoError as e:
-            logger.error(f"Failed to unwrap UMK for user {user.id}: {str(e)}")
+            logger.error(f"Failed to unwrap UMK: {str(e)}", user)
             logger.error(f"Keystore details - wrapped_umk_b64 length: {len(keystore.wrapped_umk_b64) if keystore.wrapped_umk_b64 else 0}, "
                         f"umk_nonce_b64 length: {len(keystore.umk_nonce_b64) if keystore.umk_nonce_b64 else 0}, "
-                        f"amk_version: {keystore.amk_key_version}, algo_version: {keystore.algo_version}")
+                        f"amk_version: {keystore.amk_key_version}, algo_version: {keystore.algo_version}", user)
             raise
 
     @staticmethod
@@ -136,16 +142,14 @@ class EncryptionService:
             EncryptionService.setup_user_encryption(user)
 
             # Get User Master Key - this is where the error likely occurs
-            import logging
-            logger = logging.getLogger('vault')
-            logger.info(f"Attempting to get UMK for user {user.id} during vault item creation")
+            logger.info(f"Attempting to get UMK for user {user.id} during vault item creation", user)
 
-            umk = EncryptionService.get_user_master_key(user)
-            logger.info(f"Successfully retrieved UMK for user {user.id}")
+            umk = EncryptionService._get_user_master_key(user)
+            logger.info(f"Successfully retrieved UMK for user {user.id}", user)
 
             # Generate Data Encryption Key
             dek = generate_key()
-            logger.info(f"Generated DEK for user {user.id}")
+            logger.info(f"Generated DEK for user {user.id}", user)
 
             # Create vault item to get ID
             vault_item = VaultItem.objects.create(
@@ -156,19 +160,19 @@ class EncryptionService:
                 item_nonce_b64='',
                 display_name=item_data.get('name', '')[:50] if item_data.get('name') else ''
             )
-            logger.info(f"Created vault item {vault_item.id} for user {user.id}")
+            logger.info(f"Created vault item {vault_item.id} for user {user.id}", user)
 
             # Wrap DEK with UMK
-            logger.info(f"Attempting to wrap DEK for vault item {vault_item.id}")
+            logger.info(f"Attempting to wrap DEK for vault item {vault_item.id}", user)
             wrapped_dek_b64, dek_nonce_b64 = wrap_dek(dek, umk, str(vault_item.id))
-            logger.info(f"Successfully wrapped DEK for vault item {vault_item.id}")
+            logger.info(f"Successfully wrapped DEK for vault item {vault_item.id}", user)
 
             # Encrypt item data with DEK
-            logger.info(f"Attempting to encrypt item data for vault item {vault_item.id}")
+            logger.info(f"Attempting to encrypt item data for vault item {vault_item.id}", user)
             ciphertext_b64, item_nonce_b64 = encrypt_item_data(
                 item_data, dek, user.id, str(vault_item.id)
             )
-            logger.info(f"Successfully encrypted item data for vault item {vault_item.id}")
+            logger.info(f"Successfully encrypted item data for vault item {vault_item.id}", user)
 
             # Update vault item with encrypted data
             vault_item.wrapped_dek_b64 = wrapped_dek_b64
@@ -180,14 +184,14 @@ class EncryptionService:
                 'ciphertext_b64', 'item_nonce_b64'
             ])
             
-            logger.info(f"Successfully created and saved encrypted vault item {vault_item.id} for user {user.id}")
+            logger.info(f"Successfully created and saved encrypted vault item {vault_item.id} for user {user.id}", user)
             return vault_item
             
         except CryptoError as e:
-            logger.error(f"CryptoError during vault item creation for user {user.id}: {str(e)}")
+            logger.error(f"CryptoError during vault item creation for user {user.id}: {str(e)}", user)
             raise
         except Exception as e:
-            logger.error(f"Unexpected error during vault item creation for user {user.id}: {type(e).__name__}: {str(e)}")
+            logger.error(f"Unexpected error during vault item creation for user {user.id}: {type(e).__name__}: {str(e)}", user)
             raise
         finally:
             # Secure zero sensitive keys
@@ -226,7 +230,7 @@ class EncryptionService:
         
         try:
             # Get User Master Key
-            umk = EncryptionService.get_user_master_key(user)
+            umk = EncryptionService._get_user_master_key(user)
             
             # Get the algorithm version, defaulting to 1 if not set
             algo_version = getattr(vault_item, 'algo_version', 1)
@@ -342,7 +346,7 @@ class EncryptionService:
             EncryptionService.setup_user_encryption(user)
 
             # Get User Master Key
-            umk = EncryptionService.get_user_master_key(user)
+            umk = EncryptionService._get_user_master_key(user)
             
             # Generate new Data Encryption Key for security
             dek = generate_key()

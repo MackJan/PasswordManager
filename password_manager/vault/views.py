@@ -1,14 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from django.http import JsonResponse
 from .models import VaultItem
 from .encryption_service import EncryptionService, VaultItemProxy
 from .crypto_utils import CryptoError
+from core.logging_utils import get_vault_logger
 import logging
 
-# Get logger for vault app
-logger = logging.getLogger('vault')
-alerts_logger = logging.getLogger('alerts')
+# Get centralized logger
+logger = get_vault_logger()
 
 def _handle_create_item(request):
     """Handle creation of a new vault item."""
@@ -18,7 +17,7 @@ def _handle_create_item(request):
     item_url = request.POST.get('url', '')
     item_notes = request.POST.get('notes', '')
 
-    logger.info(f"User {request.user.email} attempting to create vault item.")
+    logger.user_activity("vault_item_creation_attempt", request.user, "Creating new vault item")
 
     if not item_name or not item_username or not item_password:
         messages.error(request, 'Name, username, and password are required')
@@ -37,16 +36,16 @@ def _handle_create_item(request):
         # Create encrypted vault item
         vault_item = EncryptionService.create_vault_item(request.user, item_data)
 
-        logger.info(f"User {request.user.email} successfully created vault item {vault_item.id}.")
+        logger.user_activity("vault_item_created", request.user, f"Successfully created vault item {vault_item.id}")
         messages.success(request, f'Item "{item_name}" created successfully!')
 
     except CryptoError as e:
-        logger.error(f"Encryption error creating vault item for user {request.user.email}: {str(e)}")
-        alerts_logger.error(f"Encryption error in vault item creation for user {request.user.email}: {str(e)}")
+        logger.encryption_event(f"vault item creation failed: {str(e)}", request.user, success=False)
+        logger.critical(f"Encryption error in vault item creation", request.user)
         messages.error(request, 'Encryption error occurred while creating the item')
     except Exception as e:
-        logger.error(f"User {request.user.email} failed to create vault item - error: {str(e)}")
-        alerts_logger.error(f"Critical error in vault item creation for user {request.user.email}: {str(e)}")
+        logger.error(f"Vault item creation failed", request.user, extra_data={"error": str(e)})
+        logger.critical(f"Critical error in vault item creation", request.user)
         messages.error(request, 'Something went wrong!')
 
 def _handle_edit_item(request):
@@ -61,7 +60,7 @@ def _handle_edit_item(request):
     try:
         vault_item = get_object_or_404(VaultItem, id=item_id, user=request.user)
 
-        logger.info(f"User {request.user.email} attempting to edit vault item {vault_item.id}.")
+        logger.user_activity("vault_item_edit_attempt", request.user, f"Editing vault item {vault_item.id}")
 
         if not item_name or not item_username or not item_password:
             messages.error(request, 'Name, username, and password are required')
@@ -79,26 +78,26 @@ def _handle_edit_item(request):
         # Update encrypted vault item
         EncryptionService.update_vault_item(request.user, vault_item, item_data)
 
-        logger.info(f"User {request.user.email} successfully updated vault item {vault_item.id}.")
+        logger.user_activity("vault_item_updated", request.user, f"Successfully updated vault item {vault_item.id}")
         messages.success(request, f'Item "{item_name}" updated successfully!')
 
     except VaultItem.DoesNotExist:
-        logger.error(f"User {request.user.email} tried to edit non-existent or unauthorized vault item.")
-        alerts_logger.error(f"Possible unauthorized access attempt by user {request.user.email} to vault item.")
+        logger.security_event("Unauthorized vault item edit attempt", request.user, extra_data={"item_id": item_id})
+        logger.critical("Possible unauthorized access attempt to vault item", request.user)
         messages.error(request, 'Item does not exist or you do not have permission to edit it')
     except CryptoError as e:
-        logger.error(f"Encryption error updating vault item for user {request.user.email}: {str(e)}")
-        alerts_logger.error(f"Encryption error in vault item update for user {request.user.email}: {str(e)}")
+        logger.encryption_event(f"vault item update failed: {str(e)}", request.user, success=False)
+        logger.critical("Encryption error in vault item update", request.user)
         messages.error(request, 'Encryption error occurred while updating the item')
     except Exception as e:
-        logger.error(f"User {request.user.email} failed to update vault item - error: {str(e)}")
-        alerts_logger.error(f"Critical error in vault item update for user {request.user.email}: {str(e)}")
+        logger.error("Vault item update failed", request.user, extra_data={"error": str(e), "item_id": item_id})
+        logger.critical("Critical error in vault item update", request.user)
         messages.error(request, 'An error occurred while updating the item')
 
 def _handle_delete_item(request):
     """Handle deletion of a vault item."""
     item_id = request.POST.get('id')
-    logger.info(f"User {request.user.email} attempting to delete vault item {item_id}.")
+    logger.user_activity("vault_item_delete_attempt", request.user, f"Attempting to delete vault item {item_id}")
 
     try:
         vault_item = get_object_or_404(VaultItem, id=item_id, user=request.user)
@@ -107,16 +106,16 @@ def _handle_delete_item(request):
         display_name = vault_item.display_name or f"Item {str(vault_item.id)[:8]}"
 
         vault_item.delete()
-        logger.info(f"User {request.user.email} successfully deleted vault item: {item_id}")
+        logger.user_activity("vault_item_deleted", request.user, f"Successfully deleted vault item: {item_id}")
         messages.success(request, f'Item "{display_name}" deleted successfully!')
 
     except VaultItem.DoesNotExist:
-        logger.error(f"User {request.user.email} tried to delete non-existent or unauthorized vault item {item_id}.")
-        alerts_logger.error(f"Possible unauthorized access attempt by user {request.user.email} to vault item {item_id}.")
+        logger.security_event("Unauthorized vault item delete attempt", request.user, extra_data={"item_id": item_id})
+        logger.critical("Possible unauthorized access attempt to vault item", request.user)
         messages.error(request, 'Item does not exist or you do not have permission to delete it')
     except Exception as e:
-        logger.error(f"User {request.user.email} failed to delete vault item {item_id} - error: {str(e)}")
-        alerts_logger.error(f"Critical error in vault item deletion for user {request.user.email}: {str(e)}")
+        logger.error("Vault item deletion failed", request.user, extra_data={"error": str(e), "item_id": item_id})
+        logger.critical("Critical error in vault item deletion", request.user)
         messages.error(request, 'An error occurred while deleting the item')
 
 # Create your views here.
@@ -125,7 +124,7 @@ def vault_dashboard(request):
         logger.warning(f"Unauthorized vault access attempt from IP: {request.META.get('REMOTE_ADDR')}")
         return redirect('/login')
 
-    logger.info(f"Vault dashboard accessed by user: {request.user.email}")
+    logger.user_activity(f"user_activity: {request.user.email}",request.user)
 
     if request.method == "POST":
         action = request.POST.get('action', 'create')
@@ -160,7 +159,7 @@ def vault_dashboard(request):
         return response
 
     except CryptoError as e:
-        logger.error(f"Encryption error loading vault for user {request.user.email}: {str(e)}")
-        alerts_logger.error(f"Encryption error in vault loading for user {request.user.email}: {str(e)}")
+        logger.encryption_event(f"vault loading failed: {str(e)}", request.user, success=False)
+        logger.critical("Encryption error in vault loading", request.user)
         messages.error(request, 'Unable to decrypt vault items. Please contact support.')
         return render(request, 'dashboard.html', {'items': []})

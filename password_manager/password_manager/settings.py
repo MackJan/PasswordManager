@@ -189,15 +189,15 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'json': {
-            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(name)s", "message": "%(message)s", "user_id": "%(user_id)s", "ip": "%(ip)s"}',
+            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "module": "%(module)s", "message": "%(message)s", "user_id": "%(user_id)s", "ip": "%(ip)s"}',
             'datefmt': '%Y-%m-%dT%H:%M:%S%z'
         },
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'format': '{levelname} {asctime} {name} {module} {process:d} {thread:d} {message}',
             'style': '{',
         },
         'simple': {
-            'format': '{levelname} {message}',
+            'format': '{levelname} {name} {message}',
             'style': '{',
         },
     },
@@ -207,15 +207,37 @@ LOGGING = {
         },
     },
     'handlers': {
-        'django_file': {
+        # Application logs (all non-Django logs)
+        'application_file': {
             'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'filename': os.path.join(BASE_DIR, 'logs', 'application.log'),
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
             'filters': ['add_user_id'],
         },
+        # Authentication and user management logs
+        'auth_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'authentication.log'),
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'json',
+            'filters': ['add_user_id'],
+        },
+        # Vault and encryption specific logs
+        'vault_file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'vault.log'),
+            'maxBytes': 1024 * 1024 * 10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'json',
+            'filters': ['add_user_id'],
+        },
+        # Security events and warnings
         'security_file': {
             'level': 'WARNING',
             'class': 'logging.handlers.RotatingFileHandler',
@@ -225,19 +247,21 @@ LOGGING = {
             'formatter': 'json',
             'filters': ['add_user_id'],
         },
-        'user_activity_file': {
-            'level': 'INFO',
+        # Critical errors and alerts
+        'alerts_file': {
+            'level': 'ERROR',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'user_activity.log'),
+            'filename': os.path.join(BASE_DIR, 'logs', 'alerts.log'),
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
             'filters': ['add_user_id'],
         },
-        'alerts_file': {
-            'level': 'ERROR',
+        # Django framework logs
+        'django_file': {
+            'level': 'INFO',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'alerts.log'),
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
@@ -250,28 +274,54 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['django_file', 'console'],
+        # Root logger for all applications
+        '': {
+            'handlers': ['application_file', 'console'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
+        },
+        # Django framework logs
+        'django': {
+            'handlers': ['django_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.server': {
+            'handlers': ['django_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['django_file', 'security_file'],
+            'level': 'WARNING',
+            'propagate': False,
         },
         'django.security': {
             'handlers': ['security_file'],
             'level': 'WARNING',
             'propagate': False,
         },
+        # Authentication logs
         'accounts': {
-            'handlers': ['user_activity_file', 'security_file'],
+            'handlers': ['auth_file', 'security_file'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
+        # Vault and encryption logs
         'vault': {
-            'handlers': ['user_activity_file', 'security_file'],
+            'handlers': ['vault_file', 'security_file'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
+        # Core application logs
+        'core': {
+            'handlers': ['application_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        # Critical alerts
         'alerts': {
-            'handlers': ['alerts_file'],
+            'handlers': ['alerts_file', 'console'],
             'level': 'ERROR',
             'propagate': False,
         },
@@ -309,7 +359,7 @@ ACCOUNT_PASSWORD_MIN_LENGTH = 8
 ACCOUNT_PASSWORD_INPUT_TYPE = 'password'
 
 # MFA (2FA) Configuration
-MFA_ADAPTER = 'allauth.mfa.adapter.DefaultMFAAdapter'
+MFA_ADAPTER = 'accounts.mfa_adapter.CustomMFAAdapter'
 MFA_TOTP_PERIOD = 30
 MFA_TOTP_DIGITS = 6
 MFA_RECOVERY_CODE_COUNT = 10

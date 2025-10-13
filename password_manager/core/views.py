@@ -1,16 +1,17 @@
 from django.http import HttpResponse
 from django.template import loader
 from django.shortcuts import redirect
-import logging
+from core.logging_utils import get_core_logger
 
-# Get logger for core app
-logger = logging.getLogger('core')
+# Get centralized logger
+logger = get_core_logger()
 
 def home(request):
-    logger.info(f"Home page accessed from IP: {request.META.get('REMOTE_ADDR')}")
+    logger.info("Home page accessed", extra_data={"ip": request.META.get('REMOTE_ADDR')})
     user_email = ""
+
     if request.user.is_authenticated:
-        logger.info(f"Authenticated user {request.user.email} accessed home page")
+        logger.user_activity("home_page_access", request.user)
         user_email = request.user.email
     template = loader.get_template('home.html')
     context = {
@@ -20,5 +21,5 @@ def home(request):
     return HttpResponse(template.render(context,request))
 
 def root(request):
-    logger.info(f"Root redirect accessed from IP: {request.META.get('REMOTE_ADDR')}")
+    logger.info("Root redirect accessed", extra_data={"ip": request.META.get('REMOTE_ADDR')})
     return redirect("/home/")
