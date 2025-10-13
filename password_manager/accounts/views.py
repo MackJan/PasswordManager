@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from allauth.account.views import (
     PasswordResetFromKeyView,
     INTERNAL_RESET_SESSION_KEY,
@@ -64,13 +64,14 @@ def get_recovery_codes_data(codes):
         'unused_codes': codes  # Keep this for compatibility with existing views
     }
 
-
+@require_http_methods(["GET"])
 def logout_page(request):
     if request.user.is_authenticated:
         logger.info(f"User logged out: {request.user.email}")
     logout(request)
     return redirect('/login/')
 
+@require_http_methods(["GET"])
 @login_required
 def profile_view(request):
     """User profile overview with links to security settings"""
@@ -81,6 +82,7 @@ def profile_view(request):
     }
     return render(request, 'accounts/profile.html', context)
 
+@require_http_methods(["GET"])
 @login_required
 def security_settings(request):
     """Security settings page with 2FA management"""
@@ -102,6 +104,7 @@ def security_settings(request):
     }
     return render(request, 'accounts/security_settings.html', context)
 
+@require_http_methods(["GET", "POST"])
 @login_required
 def enable_2fa(request):
     user = request.user
@@ -166,7 +169,7 @@ def enable_2fa(request):
     return render(request, 'accounts/enable_2fa.html', context)
 
 @login_required
-@require_POST
+@require_http_methods(["GET", "POST"])
 def disable_2fa(request):
     """Disable 2FA for the user"""
     user = request.user
@@ -183,6 +186,7 @@ def disable_2fa(request):
     return redirect('security_settings')
 
 @login_required
+@require_http_methods(["GET", "POST"])
 def regenerate_recovery_codes(request):
     """Regenerate recovery codes"""
     user = request.user
@@ -224,6 +228,7 @@ def show_recovery_codes(request):
     context = {'recovery_codes': codes}
     return render(request, 'accounts/show_recovery_codes.html', context)
 
+@require_http_methods(["GET", "POST"])
 def recovery_code_login(request):
     """Allow users to authenticate using recovery codes"""
     if request.user.is_authenticated:

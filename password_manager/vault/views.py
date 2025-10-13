@@ -41,11 +41,11 @@ def _handle_create_item(request):
 
     except CryptoError as e:
         logger.encryption_event(f"vault item creation failed: {str(e)}", request.user, success=False)
-        logger.critical(f"Encryption error in vault item creation", request.user)
+        logger.critical("Encryption error in vault item creation", request.user)
         messages.error(request, 'Encryption error occurred while creating the item')
     except Exception as e:
-        logger.error(f"Vault item creation failed", request.user, extra_data={"error": str(e)})
-        logger.critical(f"Critical error in vault item creation", request.user)
+        logger.error("Vault item creation failed", request.user, extra_data={"error": str(e)})
+        logger.critical("Critical error in vault item creation", request.user)
         messages.error(request, 'Something went wrong!')
 
 def _handle_edit_item(request):

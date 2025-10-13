@@ -8,10 +8,10 @@ class VaultItem(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='vault_items')
 
     # Encrypted DEK and item data (nullable for migration compatibility)
-    wrapped_dek_b64 = models.TextField(null=True, blank=True)  # AEAD(UMK, DEK, aad={item_id, ver})
-    dek_wrap_nonce_b64 = models.CharField(max_length=64, null=True, blank=True)
-    ciphertext_b64 = models.TextField(null=True, blank=True)  # AEAD(DEK, item_json, aad={user_id,item_id,ver})
-    item_nonce_b64 = models.CharField(max_length=64, null=True, blank=True)
+    wrapped_dek_b64 = models.TextField(blank=True,default='')  # AEAD(UMK, DEK, aad={item_id, ver})
+    dek_wrap_nonce_b64 = models.CharField(max_length=64, blank=True,default='')
+    ciphertext_b64 = models.TextField(blank=True,default='')  # AEAD(DEK, item_json, aad={user_id,item_id,ver})
+    item_nonce_b64 = models.CharField(max_length=64, blank=True,default='')
     algo_version = models.SmallIntegerField(default=1)
 
     # Optional display name (keep minimal/empty for full encryption)

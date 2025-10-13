@@ -6,6 +6,7 @@ Implements AES-256-GCM AEAD encryption workflow as specified.
 import os
 import json
 import base64
+import logging
 from typing import Dict, Any, Tuple, Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.exceptions import InvalidTag
@@ -36,7 +37,6 @@ class AMKManager:
 
     def _load_amks(self):
         """Load AMKs from file storage or environment variables"""
-        import logging
         logger = logging.getLogger('vault')
 
         # First try to load from environment variable (for production/docker)
@@ -68,8 +68,8 @@ class AMKManager:
                 try:
                     self._amk_file_path.rename(backup_path)
                     logger.warning(f"Corrupted AMK file backed up to {backup_path}")
-                except:
-                    pass
+                except Exception as e:
+                    raise e
 
         # Generate new AMK and save it
         logger.warning("No valid AMK found, generating new AMK")
@@ -102,7 +102,6 @@ class AMKManager:
 
     def get_amk(self, version: int = 1) -> bytes:
         """Get AMK by version"""
-        import logging
         logger = logging.getLogger('vault')
 
         if version not in self._amk_cache:
@@ -206,14 +205,12 @@ def aead_decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes = b'') 
         return plaintext
     except InvalidTag as e:
         # Enhanced error reporting for production debugging
-        import logging
         logger = logging.getLogger('vault')
         logger.error(f"AEAD Authentication failed - Key length: {len(key)}, Nonce length: {len(nonce)}, "
                     f"Ciphertext length: {len(ciphertext)}, AAD: {aad.decode('utf-8', errors='replace')}")
         raise CryptoError("Authentication failed - data may be corrupted or tampered with")
     except Exception as e:
         # Log any other unexpected errors
-        import logging
         logger = logging.getLogger('vault')
         logger.error(f"Unexpected AEAD error: {type(e).__name__}: {str(e)}")
         raise CryptoError(f"Decryption failed: {str(e)}")
@@ -415,6 +412,20 @@ def secure_zero(data: bytes) -> None:
             location = id(data) + 32  # Offset to string data in CPython
             size = len(data)
             ctypes.memset(location, 0, size)
-        except:
-            # Fallback - at least clear the reference
-            pass
+        except Exception as e:
+            # Fallback - at least clear the reference and attempt overwriting
+            logger = logging.getLogger('vault')
+            logger.warning(f"Secure zeroing failed: {e}")
+            try:
+                # Try to overwrite the data by creating a mutable bytearray
+                if hasattr(data, '__len__'):
+                    # Create a bytearray from the data and zero it out
+                    temp_array = bytearray(data)
+                    for i in range(len(temp_array)):
+                        temp_array[i] = 0
+                    # Force garbage collection to help clear references
+                    import gc
+                    gc.collect()
+            except Exception as e2:
+                logger.warning(f"Secure zeroing failed: {e2}")
+                pass
