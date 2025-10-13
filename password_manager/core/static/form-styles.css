@@ -259,18 +259,7 @@
     text-align: center;
 }
 
-.alert {
-    padding: 12px 16px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-    border: 1px solid transparent;
-}
 
-.alert-primary {
-    background-color: #d1ecf1;
-    border-color: #bee5eb;
-    color: #0c5460;
-}
 
 .form-content {
     margin: 20px 0;
@@ -410,25 +399,6 @@ input[type="text"]:focus {
 
 .messages {
     margin-bottom: 20px;
-}
-
-.alert {
-    padding: 12px 16px;
-    border-radius: 6px;
-    margin-bottom: 16px;
-    border: 1px solid transparent;
-}
-
-.alert-success {
-    background-color: #d4edda;
-    border-color: #c3e6cb;
-    color: #155724;
-}
-
-.alert-warning {
-    background-color: #fff3cd;
-    border-color: #ffeaa7;
-    color: #856404;
 }
 
 .alert-error, .alert-danger {

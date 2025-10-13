@@ -36,7 +36,7 @@ class CustomAccountAdapter(DefaultAccountAdapter):
                     return user
 
             except CryptoError as e:
-                logger.error(f"Encryption setup failed during registration", user, extra_data={"error": str(e)})
+                logger.error("Encryption setup failed during registration", user, extra_data={"error": str(e)})
                 logger.critical("Critical error during user registration - encryption setup failed", user)
                 # Re-raise to prevent user creation if encryption setup fails
                 raise

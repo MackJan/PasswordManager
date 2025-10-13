@@ -52,8 +52,8 @@ class UserKeystore(models.Model):
         related_name='keystore',
     )
     amk_key_version = models.SmallIntegerField(default=1)
-    wrapped_umk_b64 = models.TextField(null=True, blank=True)
-    umk_nonce_b64 = models.CharField(max_length=64, null=True, blank=True)
+    wrapped_umk_b64 = models.TextField(blank=True, default='')
+    umk_nonce_b64 = models.CharField(max_length=64, blank=True, default='')
     algo_version = models.SmallIntegerField(default=1)
     created_at = models.DateTimeField(null=True, auto_now_add=True)
     updated_at = models.DateTimeField(null=True, auto_now=True)
