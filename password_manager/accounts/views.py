@@ -260,7 +260,7 @@ def recovery_code_login(request):
 
                 # Log the user in
                 from django.contrib.auth import login
-                login(request, user)
+                login(request, user, backend="allauth.account.auth_backends.AuthenticationBackend")
 
                 logger.info(f"User {user.email} authenticated using recovery code")
                 messages.success(request, 'Successfully authenticated using recovery code.')
