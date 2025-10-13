@@ -1,19 +1,19 @@
-# Import necessary modules and models
-from django.db.models.fields import return_None
+"""Custom account views and hardened allauth overrides."""
+
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.db import transaction
-from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from allauth.account.views import (
+    PasswordResetFromKeyView,
+    INTERNAL_RESET_SESSION_KEY,
+)
 from allauth.mfa.models import Authenticator
 from allauth.mfa.totp.internal.auth import get_totp_secret
 from allauth.mfa.utils import is_mfa_enabled
 from allauth.mfa.totp.internal.auth import validate_totp_code
 from .models import CustomUser
-from vault.encryption_service import EncryptionService
-from vault.crypto_utils import CryptoError
 from core.logging_utils import get_accounts_logger
 import qrcode
 import io
@@ -23,6 +23,22 @@ import string
 
 # Get centralized logger
 logger = get_accounts_logger()
+
+
+class HardenedPasswordResetFromKeyView(PasswordResetFromKeyView):
+    """Ensure invalid password reset links cannot expose the reset form."""
+
+    def render_to_response(self, context, **response_kwargs):
+        if context.get("token_fail"):
+            # Clear any stale token data to prevent reuse attempts.
+            self.request.session.pop(INTERNAL_RESET_SESSION_KEY, None)
+            messages.error(
+                self.request,
+                "The password reset link is invalid or has expired. "
+                "Please request a new password reset email.",
+            )
+            return redirect('account_reset_password')
+        return super().render_to_response(context, **response_kwargs)
 
 def generate_recovery_codes(count=10):
     """Generate recovery codes for 2FA backup"""

@@ -15,14 +15,20 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.views.generic import RedirectView
+from accounts.views import HardenedPasswordResetFromKeyView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
     path('vault/', include('vault.urls')),
     path('', include('django_prometheus.urls')),  # /metrics endpoint
+    re_path(
+        r'^accounts/password/reset/key/(?P<uidb36>[0-9A-Za-z]+)-(?P<key>.+)/$',
+        HardenedPasswordResetFromKeyView.as_view(),
+        name='account_reset_password_from_key',
+    ),
     path('accounts/', include('allauth.urls')),  # allauth authentication URLs
     path('profile/', include('accounts.urls')),  # Custom account management views
 
