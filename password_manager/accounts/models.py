@@ -1,27 +1,32 @@
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 
 
 class CustomUserManager(BaseUserManager):
-    def create_user(self,email,password=None, **kwargs):
+    def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
-        user = self.model(email=email,**kwargs)
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self,email,password=None,**kwargs):
-        kwargs.setdefault('is_staff', True)
-        kwargs.setdefault('is_superuser', True)
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
 
-        if not kwargs.get("is_staff"):
+        if not extra_fields.get("is_staff"):
             raise ValueError("Superuser must have is_staff=True.")
-        if not kwargs.get("is_superuser"):
+        if not extra_fields.get("is_superuser"):
             raise ValueError("Superuser must have is_superuser=True.")
 
-        return self.create_user(email,password,**kwargs)
+        return self.create_user(email, password, **extra_fields)
+
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True)
@@ -30,8 +35,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['password']
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return self.email
@@ -39,16 +44,21 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 class UserKeystore(models.Model):
     """Store encrypted User Master Key (UMK) and related metadata"""
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='keystore')
+
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="keystore"
+    )
     amk_key_version = models.SmallIntegerField(default=1)  # which AMK encrypted the UMK
-    wrapped_umk_b64 = models.TextField(null=True, blank=True)  # AEAD(AMK, UMK, aad={user_id, ver})
+    wrapped_umk_b64 = models.TextField(
+        null=True, blank=True
+    )  # AEAD(AMK, UMK, aad={user_id, ver})
     umk_nonce_b64 = models.CharField(max_length=64, null=True, blank=True)
     algo_version = models.SmallIntegerField(default=1)
-    created_at = models.DateTimeField(null=True,auto_now_add=True)
-    updated_at = models.DateTimeField(null=True,auto_now=True)
+    created_at = models.DateTimeField(null=True, auto_now_add=True)
+    updated_at = models.DateTimeField(null=True, auto_now=True)
 
     class Meta:
-        db_table = 'accounts_userkeystore'
+        db_table = "accounts_userkeystore"
 
     def __str__(self):
         return f"Keystore for {self.user.email}"

@@ -1,5 +1,4 @@
 # Import necessary modules and models
-from django.db.models.fields import return_None
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
