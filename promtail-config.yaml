@@ -2,36 +2,212 @@ server:
   http_listen_port: 9080
   grpc_listen_port: 0
 
+positions:
+  filename: /tmp/positions.yaml
+
 clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
-  - job_name: docker
+  # Django Authentication Logs
+  - job_name: django-authentication
     static_configs:
-      - targets: [localhost]
-        labels:
-          job: docker
-          __path__: /var/lib/docker/containers/*/*-json.log
-
-  - job_name: django
-    static_configs:
-      - targets: [localhost]
+      - targets:
+          - localhost
         labels:
           job: django
+          log_type: authentication
+          __path__: /var/log/django/authentication.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            module: module
+            message: message
+            user_id: user_id
+            ip: ip
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05-0700"
+      - labels:
+          level:
+          logger:
+          module:
+          user_id:
+          ip:
+
+  # Django Vault Logs
+  - job_name: django-vault
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: django
+          log_type: vault
+          __path__: /var/log/django/vault.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            module: module
+            message: message
+            user_id: user_id
+            ip: ip
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05-0700"
+      - labels:
+          level:
+          logger:
+          module:
+          user_id:
+          ip:
+
+  # Django Security Logs
+  - job_name: django-security
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: django
+          log_type: security
+          __path__: /var/log/django/security.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            module: module
+            message: message
+            user_id: user_id
+            ip: ip
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05-0700"
+      - labels:
+          level:
+          logger:
+          module:
+          user_id:
+          ip:
+
+  # Django Alerts Logs
+  - job_name: django-alerts
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: django
+          log_type: alerts
+          __path__: /var/log/django/alerts.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            module: module
+            message: message
+            user_id: user_id
+            ip: ip
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05-0700"
+      - labels:
+          level:
+          logger:
+          module:
+          user_id:
+          ip:
+
+  # Django Application Logs
+  - job_name: django-application
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: django
+          log_type: application
+          __path__: /var/log/django/application.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            module: module
+            message: message
+            user_id: user_id
+            ip: ip
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05-0700"
+      - labels:
+          level:
+          logger:
+          module:
+          user_id:
+          ip:
+
+  # Django Framework Logs
+  - job_name: django-framework
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: django
+          log_type: framework
+          __path__: /var/log/django/django.log
+    pipeline_stages:
+      - json:
+          expressions:
+            timestamp: timestamp
+            level: level
+            logger: logger
+            module: module
+            message: message
+            user_id: user_id
+            ip: ip
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02T15:04:05-0700"
+      - labels:
+          level:
+          logger:
+          module:
+          user_id:
+          ip:
+
+  # Fallback for any other Django logs
+  - job_name: django-catchall
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: django
+          log_type: other
           __path__: /var/log/django/*.log
     pipeline_stages:
       - json:
           expressions:
             timestamp: timestamp
             level: level
-            message: message
+            logger: logger
             module: module
+            message: message
             user_id: user_id
             ip: ip
       - timestamp:
           source: timestamp
-          format: RFC3339
+          format: "2006-01-02T15:04:05-0700"
       - labels:
           level:
+          logger:
           module:
+          user_id:
           ip:

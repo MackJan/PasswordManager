@@ -1,4 +1,5 @@
 # Import necessary modules and models
+from django.db.models.fields import return_None
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
@@ -13,7 +14,7 @@ from allauth.mfa.totp.internal.auth import validate_totp_code
 from .models import CustomUser
 from vault.encryption_service import EncryptionService
 from vault.crypto_utils import CryptoError
-import logging
+from core.logging_utils import get_accounts_logger
 import qrcode
 import qrcode.image.svg
 from io import BytesIO
@@ -21,9 +22,8 @@ import base64
 import secrets
 import string
 
-# Get logger for accounts app
-logger = logging.getLogger('accounts')
-alerts_logger = logging.getLogger('alerts')
+# Get centralized logger
+logger = get_accounts_logger()
 
 def generate_recovery_codes(count=10):
     """Generate recovery codes for 2FA backup"""
@@ -36,102 +36,6 @@ def generate_recovery_codes(count=10):
         codes.append(formatted_code)
     return codes
 
-# Define a view function for the login page
-def login_page(request):
-    logger.info(f"Login page accessed from IP: {request.META.get('REMOTE_ADDR')}")
-
-    if request.user.is_authenticated:
-        logger.info(f"Already authenticated user {request.user.email} redirected to home")
-        return redirect('/home')
-
-    # Check if the HTTP request method is POST (form submission)
-    if request.method == "POST":
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-
-        logger.info(f"Login attempt.")
-
-        # Check if a user with the provided username exists
-        if not CustomUser.objects.filter(email=email).exists():
-            # Display an error message if the username does not exist
-            logger.warning(f"Login failed - Email not found. from IP: {request.META.get('REMOTE_ADDR')}")
-            messages.error(request, "Email and Password do not match")
-            return redirect("/login/")
-
-        # Authenticate the user with the provided username and password
-        user = authenticate(email=email, password=password)
-
-        if user is None:
-            # Display an error message if authentication fails (invalid password)
-            logger.warning(f"Login failed - Invalid password from IP: {request.META.get('REMOTE_ADDR')}")
-            alerts_logger.error(f"Failed login attempt detected.")
-            messages.error(request, "Email and Password do not match")
-            return redirect("/login/")
-        else:
-            # Log in the user and redirect to the home page upon successful login
-            logger.info(f"Successful login for user: {email}")
-            login(request, user)
-            return redirect("/home/")
-
-    # Render the login page template (GET request)
-    return render(request, "login.html")
-
-
-# Define a view function for the registration page
-def register_page(request):
-    logger.info(f"Registration page accessed from IP: {request.META.get('REMOTE_ADDR')}")
-
-    if request.user.is_authenticated:
-        logger.info(f"Already authenticated user {request.user.email} redirected to home")
-        return redirect('/home')
-
-    # Check if the HTTP request method is POST (form submission)
-    if request.method == "POST":
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        confirm_password = request.POST.get('confirm_password')
-
-        logger.info(f"Registration attempt for email: {email}")
-
-        # Validate input
-        if not email or not password:
-            messages.error(request, 'Email and password are required')
-            return redirect('/register/')
-
-        if password != confirm_password:
-            messages.error(request, 'Passwords do not match')
-            return redirect('/register/')
-
-        # Check if user already exists
-        if CustomUser.objects.filter(email=email).exists():
-            logger.warning(f"Registration failed - Email already exists: {email}")
-            messages.error(request, 'Email already exists')
-            return redirect('/register/')
-
-        try:
-            # Create user and set up encryption in a transaction
-            with transaction.atomic():
-                # Create the user (Django handles Argon2 password hashing)
-                user = CustomUser.objects.create_user(email=email, password=password)
-
-                # Set up encryption for the new user
-                EncryptionService.setup_user_encryption(user)
-
-                logger.info(f"Successfully registered user: {email} with encryption setup")
-                messages.success(request, 'Registration successful! Please log in.')
-                return redirect('/login/')
-
-        except CryptoError as e:
-            logger.error(f"Encryption setup failed for user {email}: {str(e)}")
-            messages.error(request, 'Registration failed due to encryption error')
-            return redirect('/register/')
-        except Exception as e:
-            logger.error(f"Registration failed for user {email}: {str(e)}")
-            messages.error(request, 'Registration failed')
-            return redirect('/register/')
-
-    # Render the registration page template (GET request)
-    return render(request, 'register.html')
 
 def logout_page(request):
     if request.user.is_authenticated:
@@ -172,62 +76,50 @@ def security_settings(request):
 
 @login_required
 def enable_2fa(request):
-    """Enable 2FA with TOTP authenticator"""
     user = request.user
 
-    # Check if TOTP is already enabled
     if Authenticator.objects.filter(user=user, type=Authenticator.Type.TOTP).exists():
         messages.warning(request, '2FA is already enabled for your account.')
         return redirect('security_settings')
 
+    # Use existing secret from session if available
+    secret = request.session.get('totp_secret')
+    if not secret:
+        secret = get_totp_secret(user)
+        request.session['totp_secret'] = secret
+
     if request.method == 'POST':
         code = request.POST.get('code')
-        secret = request.session.get('totp_secret')
 
         if not secret:
             messages.error(request, 'Session expired. Please try again.')
             return redirect('enable_2fa')
 
-        # Verify the TOTP code
         if validate_totp_code(secret, code):
-            # Create the TOTP authenticator
             Authenticator.objects.create(
                 user=user,
                 type=Authenticator.Type.TOTP,
                 data={'secret': secret}
             )
-
-            # Generate recovery codes
             codes = generate_recovery_codes()
             Authenticator.objects.create(
                 user=user,
                 type=Authenticator.Type.RECOVERY_CODES,
                 data={'unused_codes': codes}
             )
-
-            # Clear session
             del request.session['totp_secret']
-
             logger.info(f"2FA enabled for user: {user.email}")
             messages.success(request, '2FA has been successfully enabled!')
-
-            # Show recovery codes
             request.session['new_recovery_codes'] = codes
             return redirect('show_recovery_codes')
         else:
             messages.error(request, 'Invalid code. Please try again.')
 
-
-    secret = get_totp_secret(user)
-    request.session['totp_secret'] = secret
-
-    # Generate QR code
+    # Generate QR code using the current secret
     totp_uri = f"otpauth://totp/{user.email}?secret={secret}&issuer=Password%20Manager"
     qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(totp_uri)
     qr.make(fit=True)
-
-    # Create QR code image
     img = qr.make_image(fill_color="black", back_color="white")
     buffer = BytesIO()
     img.save(buffer, format='PNG')
@@ -353,4 +245,3 @@ def recovery_code_login(request):
             messages.error(request, 'Invalid email or recovery code.')
 
     return render(request, 'accounts/recovery_login.html')
-

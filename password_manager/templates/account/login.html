@@ -6,6 +6,7 @@
     <title>Password Manager - Login</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'form-styles.css' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
 </head>
 <body class="form-page">
     <div class="form-container">
@@ -45,13 +46,6 @@
                     <div class="form-error">{{ form.password.errors }}</div>
                 {% endif %}
             </div>
-
-            <!-- Remember me checkbox -->
-            {% if form.remember %}
-            <div class="form-group">
-                {{ form.remember }} <label for="{{ form.remember.id_for_label }}">Remember me</label>
-            </div>
-            {% endif %}
 
             <!-- Submit button -->
             <button type="submit" class="form-button">Login</button>
