@@ -1,5 +1,8 @@
 from allauth.mfa.adapter import DefaultMFAAdapter
+from allauth.mfa.models import Authenticator
 from core.logging_utils import get_accounts_logger
+import secrets
+import hashlib
 
 # Get centralized logger
 logger = get_accounts_logger()
@@ -81,11 +84,33 @@ class CustomMFAAdapter(DefaultMFAAdapter):
 
     def generate_recovery_codes(self, user):
         """
-        Override to log recovery code generation
+        Override to generate recovery codes with proper allauth format
         """
-        codes = super().generate_recovery_codes(user)
+        # Generate a seed for the recovery codes
+        seed = secrets.token_bytes(32)
+
+        # Generate recovery codes using the seed
+        codes = []
+        for i in range(10):  # Generate 10 recovery codes
+            code_input = seed + i.to_bytes(4, 'big')
+            code_hash = hashlib.sha256(code_input).hexdigest()[:8]
+            codes.append(code_hash)
+
         logger.user_activity("2fa_recovery_codes_generated", user, f"Generated {len(codes)} recovery codes")
         logger.security_event("2FA recovery codes generated", user, extra_data={
             "code_count": len(codes)
         })
+
         return codes
+
+    def get_recovery_codes_data(self, codes):
+        """
+        Generate the data structure that allauth expects for recovery codes
+        """
+        # Generate a seed for the recovery codes
+        seed = secrets.token_bytes(32)
+
+        return {
+            'seed': seed.hex(),  # This is what allauth expects
+            'unused_codes': codes  # Keep this for compatibility with existing views
+        }
