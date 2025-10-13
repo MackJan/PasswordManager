@@ -160,7 +160,7 @@ def enable_2fa(request):
 
     context = {
         'secret': secret,
-        'qr_code': qr_code_data,
+        'qr_code_data': qr_code_data,
     }
 
     return render(request, 'accounts/enable_2fa.html', context)
