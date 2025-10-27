@@ -65,11 +65,8 @@ class AMKManager:
                 logger.error(f"Failed to load AMK from file {self._amk_file_path}: {e}")
                 # If file is corrupted, backup and regenerate
                 backup_path = self._amk_file_path.with_suffix('.backup')
-                try:
-                    self._amk_file_path.rename(backup_path)
-                    logger.warning(f"Corrupted AMK file backed up to {backup_path}")
-                except Exception as e:
-                    raise e
+                self._amk_file_path.rename(backup_path)
+                logger.warning(f"Corrupted AMK file backed up to {backup_path}")
 
         # Generate new AMK and save it
         logger.warning("No valid AMK found, generating new AMK")
@@ -207,7 +204,7 @@ def aead_decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes = b'') 
         # Enhanced error reporting for production debugging
         logger = logging.getLogger('vault')
         logger.error(f"AEAD Authentication failed - Key length: {len(key)}, Nonce length: {len(nonce)}, "
-                    f"Ciphertext length: {len(ciphertext)}, AAD: {aad.decode('utf-8', errors='replace')}")
+                     f"Ciphertext length: {len(ciphertext)}, AAD: {aad.decode('utf-8', errors='replace')}")
         raise CryptoError("Authentication failed - data may be corrupted or tampered with")
     except Exception as e:
         # Log any other unexpected errors
@@ -349,7 +346,8 @@ def unwrap_dek(wrapped_dek_b64: str, nonce_b64: str, umk: bytes, item_id: str, a
     return dek
 
 
-def encrypt_item_data(item_data: Dict[str, Any], dek: bytes, user_id: int, item_id: str, algo_version: int = 1) -> Tuple[str, str]:
+def encrypt_item_data(item_data: Dict[str, Any], dek: bytes, user_id: int, item_id: str, algo_version: int = 1) -> \
+Tuple[str, str]:
     """
     Encrypt item data using Data Encryption Key
 
@@ -375,7 +373,8 @@ def encrypt_item_data(item_data: Dict[str, Any], dek: bytes, user_id: int, item_
     )
 
 
-def decrypt_item_data(ciphertext_b64: str, nonce_b64: str, dek: bytes, user_id: int, item_id: str, algo_version: int = 1) -> Dict[str, Any]:
+def decrypt_item_data(ciphertext_b64: str, nonce_b64: str, dek: bytes, user_id: int, item_id: str,
+                      algo_version: int = 1) -> Dict[str, Any]:
     """
     Decrypt item data using Data Encryption Key
 
@@ -428,4 +427,3 @@ def secure_zero(data: bytes) -> None:
                     gc.collect()
             except Exception as e2:
                 logger.warning(f"Secure zeroing failed: {e2}")
-                pass

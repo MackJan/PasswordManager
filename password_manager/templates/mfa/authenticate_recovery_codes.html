@@ -72,7 +72,7 @@
     <script>
         // Auto-format recovery code input
         document.getElementById('recovery_code').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/[^A-Z0-9]/g, '').substring(0, 8);
+            let value = e.target.value.replaceAll(/[^A-Z0-9]/g, '').substring(0, 8);
             if (value.length > 4) {
                 value = value.substring(0, 4) + '-' + value.substring(4);
             }

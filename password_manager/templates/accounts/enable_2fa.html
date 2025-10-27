@@ -233,7 +233,7 @@
 
             codeInput.addEventListener('input', function(e) {
                 // Only allow numbers
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                e.target.value = e.target.value.replaceAll(/\D/g, '');
 
                 // Auto-submit when 6 digits are entered
                 if (e.target.value.length === 6) {
