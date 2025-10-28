@@ -1,19 +1,42 @@
-<div class="header-container">
-    <div class="header-actions">
-        <a href="/home/" class="btn">Home</a>
+{% load static %}
+<div class="top-bar-inner">
+    <a href="/home/" class="brand">
+        <span class="brand-icon">
+            <svg class="icon" aria-hidden="true" focusable="false">
+                <use href="{% static 'img/icons/lock.svg#icon-lock' %}"></use>
+            </svg>
+        </span>
+        VaultLock
+    </a>
+    <nav class="top-nav" aria-label="Primary">
+        <a href="/home/" class="nav-link"{% if request.path == '/home/' or request.path == '/' %} aria-current="page"{% endif %}>
+            <svg class="icon" aria-hidden="true" focusable="false">
+                <use href="{% static 'img/icons/home.svg#icon-home' %}"></use>
+            </svg>
+            Home
+        </a>
         {% if user.is_authenticated %}
-            <a href="/vault/" class="btn">Vault</a>
-            <a href="{% url 'profile' %}" class="btn">Profile</a>
+        <a href="/vault/" class="nav-link"{% if request.path|slice:':6' == '/vault' %} aria-current="page"{% endif %}>
+            <svg class="icon" aria-hidden="true" focusable="false">
+                <use href="{% static 'img/icons/lock.svg#icon-lock' %}"></use>
+            </svg>
+            Vault
+        </a>
         {% endif %}
-        {% if not user.is_authenticated %}
-            <a href="{% url 'account_login' %}" class="btn btn-primary">Login</a>
-            <a href="{% url 'account_signup' %}" class="btn btn-secondary">Register</a>
+    </nav>
+    <div class="auth-actions">
+        {% if user.is_authenticated %}
+            <div class="user-chip" role="presentation">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                    <use href="{% static 'img/icons/user.svg#icon-user' %}"></use>
+                </svg>
+                <span>{{ user.email }}</span>
+            </div>
+            <a href="{% url 'profile' %}" class="btn btn-secondary">Profile</a>
+            <a href="{% url 'account_logout' %}" class="btn btn-ghost">Logout</a>
         {% else %}
-            <a href="{% url 'account_logout' %}" class="btn btn-logout">Logout</a>
-        {% endif %}
-
-        {% if user.is_authenticated %}
-        <p class="user-email">{{ user.email }}</p>
+            <a href="{% url 'account_login' %}" class="btn btn-secondary">Sign in</a>
+            <a href="{% url 'account_signup' %}" class="btn btn-primary">Create account</a>
         {% endif %}
     </div>
 </div>

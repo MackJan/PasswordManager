@@ -1,52 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Authentication Required</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body class="form-page">
-    <div class="form-container">
-        <div class="form-title">
-            <h1>Password Manager</h1>
-        </div>
+{% extends "master.html" %}
 
-        <h2 class="form-subtitle">Two-Factor Authentication</h2>
+{% block title %}Two-factor authentication{% endblock %}
 
-        <!-- Display messages -->
-        {% if messages %}
-        <div class="alert alert-primary" role="alert">
-            {% for message in messages %}
-            {{ message }}
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <div class="form-content">
-            <p>Please enter the 6-digit code from your authenticator app:</p>
-
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="{{ form.code.id_for_label }}">Authentication Code</label>
-                    {{ form.code }}
-                    {% if form.code.errors %}
-                        <div class="form-error">{{ form.code.errors }}</div>
-                    {% endif %}
-                </div>
-
-                <button type="submit" class="form-button">Verify</button>
-            </form>
-
-            <div class="form-footer">
-                <p>Having trouble with your authenticator app?</p>
-                <p><a href="{% url 'recovery_code_login' %}">Use a recovery code instead</a></p>
-                <p><a href="{% url 'profile' %}security/">Manage your account security</a></p>
-            </div>
-        </div>
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Verify it's you</h1>
+        <p class="page-description">Enter the 6-digit code from your authenticator app to continue.</p>
     </div>
-</body>
-</html>
+</section>
+
+<section class="card form-card">
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <label for="{{ form.code.id_for_label }}">
+            Authentication code
+            {{ form.code }}
+            {{ form.code.errors }}
+        </label>
+        <button type="submit" class="btn btn-primary">Verify</button>
+    </form>
+    <div class="form-footer">
+        <p>Lost access to your authenticator? <a href="{% url 'recovery_code_login' %}">Use a recovery code</a>.</p>
+    </div>
+</section>
+{% endblock %}

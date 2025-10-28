@@ -1,46 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Confirm Email</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body class="form-page">
-    <div class="form-container">
-        <div class="form-title">
-            <h1>Password Manager</h1>
-        </div>
+{% extends "master.html" %}
 
-        <h2 class="form-subtitle">Confirm Email Address</h2>
+{% block title %}Confirm email{% endblock %}
 
-        <!-- Display messages -->
-        {% if messages %}
-        <div class="alert alert-primary" role="alert">
-            {% for message in messages %}
-            {{ message }}
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <div class="form-content">
-            {% if confirmation %}
-                <p>Please confirm that <strong>{{ confirmation.email_address.email }}</strong> is an email address for user {{ confirmation.email_address.user }}.</p>
-
-                <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
-                    {% csrf_token %}
-                    <button type="submit" class="form-button">Confirm Email</button>
-                </form>
-            {% else %}
-                <p>This email confirmation link has expired or is invalid.</p>
-            {% endif %}
-        </div>
-
-        <div class="form-footer">
-            <p><a href="{% url 'account_login' %}">Back to Login</a></p>
-        </div>
+{% block content %}
+<section class="card form-card">
+    <h1 class="page-title">Confirm your email</h1>
+    {% if confirmation %}
+        <p class="page-description">Approve <strong>{{ confirmation.email_address.email }}</strong> for {{ confirmation.email_address.user }} to finish setting up your account.</p>
+        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}" class="form-grid">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary">Confirm email</button>
+        </form>
+    {% else %}
+        <p class="page-description">This confirmation link is no longer valid. Request a new one from your profile.</p>
+    {% endif %}
+    <div class="form-footer">
+        <p><a href="{% url 'account_login' %}">Return to sign in</a></p>
     </div>
-</body>
-</html>
+</section>
+{% endblock %}

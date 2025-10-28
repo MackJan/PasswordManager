@@ -1,78 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Recovery Code Login</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body class="form-page">
-    <div class="form-container">
-        <div class="form-title">
-            <h1>Password Manager</h1>
-        </div>
+{% extends "master.html" %}
 
-        <h2 class="form-subtitle">Recovery Code Login</h2>
+{% block title %}Recovery code login{% endblock %}
 
-        <!-- Display messages -->
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <div class="form-content">
-            <p>If you've lost access to your authenticator app, you can use one of your recovery codes to log in.</p>
-
-            <form method="post">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email"
-                           id="email"
-                           name="email"
-                           class="form-control"
-                           placeholder="Enter your email address"
-                           required>
-                </div>
-
-                <div class="form-group">
-                    <label for="recovery_code">Recovery Code</label>
-                    <input type="text"
-                           id="recovery_code"
-                           name="recovery_code"
-                           class="form-control"
-                           placeholder="XXXX-XXXX"
-                           maxlength="9"
-                           pattern="[A-Z0-9]{4}-[A-Z0-9]{4}"
-                           style="text-transform: uppercase; font-family: monospace;"
-                           required>
-                    <small class="form-text">Enter the code in XXXX-XXXX format</small>
-                </div>
-
-                <button type="submit" class="form-button">Login with Recovery Code</button>
-            </form>
-        </div>
-
-        <div class="form-footer">
-            <p><a href="{% url 'account_login' %}">← Back to regular login</a></p>
-            <p>Don't have recovery codes? Contact support for assistance.</p>
-        </div>
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Sign in with a recovery code</h1>
+        <p class="page-description">Use one of your one-time recovery codes if you can't access your authenticator app.</p>
     </div>
+</section>
 
-    <script>
-        // Auto-format recovery code input
-        document.getElementById('recovery_code').addEventListener('input', function(e) {
-            let value = e.target.value.replaceAll(/[^A-Z0-9]/g, '').substring(0, 8);
-            if (value.length > 4) {
-                value = value.substring(0, 4) + '-' + value.substring(4);
-            }
-            e.target.value = value;
-        });
-    </script>
-</body>
-</html>
+<section class="card form-card">
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        <label for="email">
+            Email address
+            <input type="email" id="email" name="email" placeholder="name@example.com" required autocomplete="email">
+        </label>
+        <label for="recovery_code">
+            Recovery code
+            <input type="text" id="recovery_code" name="recovery_code" maxlength="9" pattern="[A-Z0-9]{4}-[A-Z0-9]{4}" data-format="recovery" autocomplete="off" placeholder="XXXX-XXXX" required>
+            <span class="field-hint">Enter the code in XXXX-XXXX format.</span>
+        </label>
+        <button type="submit" class="btn btn-primary">Login with recovery code</button>
+    </form>
+    <div class="form-footer">
+        <p><a href="{% url 'account_login' %}">Back to regular login</a></p>
+        <p>Need help? Contact support to restore access.</p>
+    </div>
+</section>
+{% endblock %}

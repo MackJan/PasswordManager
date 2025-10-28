@@ -1,17 +1,48 @@
 {% extends "master.html" %}
 
-{% block title %}
-  Password Manager Home
-{% endblock %}
+{% block title %}Password Manager{% endblock %}
 
 {% block content %}
-    <div class="hero-section">
-        <div class="hero-title">
-            <h1>Password Manager</h1>
-        </div>
-
-        <h2 class="hero-subtitle">Welcome to Your Password Manager</h2>
-        <p class="hero-subtitle">Keep your passwords secure and easily accessible</p>
-        <a href="/vault/" class="hero-button">Vault Dashboard</a>
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Simplify how you protect credentials</h1>
+        <p class="page-description">VaultLock keeps your logins encrypted, organised, and ready to use wherever you need them.</p>
     </div>
+    <div class="page-actions">
+        <a href="/vault/" class="btn btn-primary">
+            <svg class="icon" aria-hidden="true" focusable="false">
+                <use href="{% static 'img/icons/lock.svg#icon-lock' %}"></use>
+            </svg>
+            Open vault
+        </a>
+    </div>
+</section>
+
+<section class="card hero-card">
+    <h1>Move faster with secure access</h1>
+    <p class="hero-meta">Store passwords, generate unique credentials, and share recovery codes with confidence. Everything lives in a clean, minimal workspace optimised for focus.</p>
+    <div class="page-actions">
+        {% if user.is_authenticated %}
+        <a href="/vault/" class="btn btn-secondary">Review saved items</a>
+        {% else %}
+        <a href="{% url 'account_signup' %}" class="btn btn-primary">Create free account</a>
+        <a href="{% url 'account_login' %}" class="btn btn-secondary">Sign in</a>
+        {% endif %}
+    </div>
+</section>
+
+<section class="card-stack split-columns">
+    <article class="card card-compact">
+        <h2>Zero-friction capture</h2>
+        <p class="page-description">Add credentials with a single click and keep sensitive details obscured until you need them.</p>
+    </article>
+    <article class="card card-compact">
+        <h2>Shared recovery</h2>
+        <p class="page-description">Generate and store recovery codes securely, ready for when you need a backup plan.</p>
+    </article>
+    <article class="card card-compact">
+        <h2>Modern protection</h2>
+        <p class="page-description">Two-factor authentication and encrypted storage keep your team safe without getting in the way.</p>
+    </article>
+</section>
 {% endblock %}

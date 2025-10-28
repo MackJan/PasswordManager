@@ -1,61 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Login</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body class="form-page">
-    <div class="form-container">
-        <div class="form-title">
-            <h1>Password Manager</h1>
-        </div>
+{% extends "master.html" %}
 
-        <h2 class="form-subtitle">Login</h2>
+{% block title %}Sign in{% endblock %}
 
-        <!-- Display error/success messages -->
-        {% if messages %}
-        <div class="alert alert-primary" role="alert">
-            {% for message in messages %}
-            {{ message }}
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Login form -->
-        <form method="post" action="{% url 'account_login' %}">
-            {% csrf_token %}
-
-            <!-- Email input field -->
-            <div class="form-group">
-                <label for="{{ form.login.id_for_label }}">Email</label>
-                {{ form.login }}
-                {% if form.login.errors %}
-                    <div class="form-error">{{ form.login.errors }}</div>
-                {% endif %}
-            </div>
-
-            <!-- Password input field -->
-            <div class="form-group">
-                <label for="{{ form.password.id_for_label }}">Password</label>
-                {{ form.password }}
-                {% if form.password.errors %}
-                    <div class="form-error">{{ form.password.errors }}</div>
-                {% endif %}
-            </div>
-
-            <!-- Submit button -->
-            <button type="submit" class="form-button">Login</button>
-        </form>
-
-        <!-- Links -->
-        <div class="form-footer">
-            <p>Don't have an account? <a href="{% url 'account_signup' %}">Create one here</a></p>
-            <p><a href="{% url 'account_reset_password' %}">Forgot your password?</a></p>
-        </div>
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Sign in</h1>
+        <p class="page-description">Access your encrypted vault with your email and master password.</p>
     </div>
-</body>
-</html>
+</section>
+
+<section class="card form-card">
+    <form method="post" action="{% url 'account_login' %}" class="form-grid">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <label for="{{ form.login.id_for_label }}">
+            Email
+            {{ form.login }}
+            {{ form.login.errors }}
+        </label>
+        <label for="{{ form.password.id_for_label }}">
+            Password
+            {{ form.password }}
+            {{ form.password.errors }}
+        </label>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
+    <div class="form-footer">
+        <p><a href="{% url 'account_reset_password' %}">Forgot your password?</a></p>
+        <p>Need an account? <a href="{% url 'account_signup' %}">Create one in seconds</a>.</p>
+    </div>
+</section>
+{% endblock %}
