@@ -12,7 +12,7 @@
     <div class="page-actions">
         <a href="{% url 'security_settings' %}" class="btn btn-secondary">
             <svg class="icon" aria-hidden="true" focusable="false">
-                <use href="{% static 'img/icons/lock.svg#icon-lock' %}"></use>
+                <use href="{% static 'img/icons/lock.svg' %}#icon-lock"></use>
             </svg>
             Security settings
         </a>
@@ -46,7 +46,7 @@
                 {% if mfa_enabled %}
                     <span class="status-badge enabled">
                         <svg class="icon" aria-hidden="true" focusable="false">
-                            <use href="{% static 'img/icons/check.svg#icon-check' %}"></use>
+                            <use href="{% static 'img/icons/check.svg' %}#icon-check"></use>
                         </svg>
                         2FA enabled
                     </span>
@@ -54,7 +54,7 @@
                 {% else %}
                     <span class="status-badge disabled">
                         <svg class="icon" aria-hidden="true" focusable="false">
-                            <use href="{% static 'img/icons/eye-off.svg#icon-eye-off' %}"></use>
+                            <use href="{% static 'img/icons/eye-off.svg' %}#icon-eye-off"></use>
                         </svg>
                         2FA disabled
                     </span>

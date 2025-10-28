@@ -12,7 +12,7 @@
     <div class="page-actions">
         <button type="button" class="btn btn-primary" data-modal-open="create-item">
             <svg class="icon" aria-hidden="true" focusable="false">
-                <use href="{% static 'img/icons/add.svg#icon-add' %}"></use>
+                <use href="{% static 'img/icons/add.svg' %}#icon-add"></use>
             </svg>
             New item
         </button>
@@ -23,7 +23,7 @@
     <div class="table-toolbar">
         <label class="search-field" for="vault-search">
             <svg class="icon" aria-hidden="true" focusable="false">
-                <use href="{% static 'img/icons/search.svg#icon-search' %}"></use>
+                <use href="{% static 'img/icons/search.svg' %}#icon-search"></use>
             </svg>
             <input id="vault-search" type="search" placeholder="Search vault" data-filter="vault" aria-label="Filter saved credentials">
         </label>
@@ -55,15 +55,15 @@
                         <span class="password-text" id="password-text-{{ item.id }}">{{ item.password }}</span>
                     </div>
                     <div class="action-group">
-                        <button type="button" class="btn btn-secondary" data-toggle-password="password-field-{{ item.id }}" data-eye-on="{% static 'img/icons/eye.svg#icon-eye' %}" data-eye-off="{% static 'img/icons/eye-off.svg#icon-eye-off' %}" aria-pressed="false">
+                        <button type="button" class="btn btn-secondary" data-toggle-password="password-field-{{ item.id }}" data-eye-on="{% static 'img/icons/eye.svg' %}#icon-eye" data-eye-off="{% static 'img/icons/eye-off.svg' %}#icon-eye-off" aria-pressed="false">
                             <svg class="icon" aria-hidden="true" focusable="false">
-                                <use href="{% static 'img/icons/eye.svg#icon-eye' %}"></use>
+                                <use href="{% static 'img/icons/eye.svg' %}#icon-eye"></use>
                             </svg>
                             <span data-toggle-label>Reveal</span>
                         </button>
                         <button type="button" class="btn btn-secondary" data-copy="password-text-{{ item.id }}">
                             <svg class="icon" aria-hidden="true" focusable="false">
-                                <use href="{% static 'img/icons/copy.svg#icon-copy' %}"></use>
+                                <use href="{% static 'img/icons/copy.svg' %}#icon-copy"></use>
                             </svg>
                             Copy
                         </button>
@@ -87,13 +87,13 @@
                     <div class="action-group">
                         <button type="button" class="btn btn-secondary" data-modal-open="edit-{{ item.id }}">
                             <svg class="icon" aria-hidden="true" focusable="false">
-                                <use href="{% static 'img/icons/edit.svg#icon-edit' %}"></use>
+                                <use href="{% static 'img/icons/edit.svg' %}#icon-edit"></use>
                             </svg>
                             Edit
                         </button>
                         <button type="button" class="btn btn-danger" data-modal-open="delete-item" data-item-name="{{ item.name }}" data-form-id="delete-form-{{ item.id }}">
                             <svg class="icon" aria-hidden="true" focusable="false">
-                                <use href="{% static 'img/icons/trash.svg#icon-trash' %}"></use>
+                                <use href="{% static 'img/icons/trash.svg' %}#icon-trash"></use>
                             </svg>
                             Delete
                         </button>
@@ -112,7 +112,7 @@
                         <h2>Edit {{ item.name }}</h2>
                         <button type="button" class="modal-close" data-modal-close aria-label="Close">
                             <svg class="icon" aria-hidden="true" focusable="false">
-                                <use href="{% static 'img/icons/x.svg#icon-x' %}"></use>
+                                <use href="{% static 'img/icons/x.svg' %}#icon-x"></use>
                             </svg>
                         </button>
                     </div>
@@ -153,7 +153,7 @@
     {% else %}
     <div class="empty-state">
         <svg class="icon" aria-hidden="true" focusable="false">
-            <use href="{% static 'img/icons/lock.svg#icon-lock' %}"></use>
+            <use href="{% static 'img/icons/lock.svg' %}#icon-lock"></use>
         </svg>
         <p>No credentials stored yet. Create your first item to get started.</p>
         <button type="button" class="btn btn-primary" data-modal-open="create-item">Add item</button>
@@ -167,7 +167,7 @@
             <h2>Add vault item</h2>
             <button type="button" class="modal-close" data-modal-close aria-label="Close">
                 <svg class="icon" aria-hidden="true" focusable="false">
-                    <use href="{% static 'img/icons/x.svg#icon-x' %}"></use>
+                    <use href="{% static 'img/icons/x.svg' %}#icon-x"></use>
                 </svg>
             </button>
         </div>
@@ -208,7 +208,7 @@
             <h2>Confirm deletion</h2>
             <button type="button" class="modal-close" data-modal-close aria-label="Close">
                 <svg class="icon" aria-hidden="true" focusable="false">
-                    <use href="{% static 'img/icons/x.svg#icon-x' %}"></use>
+                    <use href="{% static 'img/icons/x.svg' %}#icon-x"></use>
                 </svg>
             </button>
         </div>

@@ -3,7 +3,7 @@
     <a href="/home/" class="brand">
         <span class="brand-icon">
             <svg class="icon" aria-hidden="true" focusable="false">
-                <use href="{% static 'img/icons/lock.svg#icon-lock' %}"></use>
+                <use href="{% static 'img/icons/lock.svg' %}#icon-lock"></use>
             </svg>
         </span>
         VaultLock
@@ -11,14 +11,14 @@
     <nav class="top-nav" aria-label="Primary">
         <a href="/home/" class="nav-link"{% if request.path == '/home/' or request.path == '/' %} aria-current="page"{% endif %}>
             <svg class="icon" aria-hidden="true" focusable="false">
-                <use href="{% static 'img/icons/home.svg#icon-home' %}"></use>
+                <use href="{% static 'img/icons/home.svg' %}#icon-home"></use>
             </svg>
             Home
         </a>
         {% if user.is_authenticated %}
         <a href="/vault/" class="nav-link"{% if request.path|slice:':6' == '/vault' %} aria-current="page"{% endif %}>
             <svg class="icon" aria-hidden="true" focusable="false">
-                <use href="{% static 'img/icons/lock.svg#icon-lock' %}"></use>
+                <use href="{% static 'img/icons/lock.svg' %}#icon-lock"></use>
             </svg>
             Vault
         </a>
@@ -28,7 +28,7 @@
         {% if user.is_authenticated %}
             <div class="user-chip" role="presentation">
                 <svg class="icon" aria-hidden="true" focusable="false">
-                    <use href="{% static 'img/icons/user.svg#icon-user' %}"></use>
+                    <use href="{% static 'img/icons/user.svg' %}#icon-user"></use>
                 </svg>
                 <span>{{ user.email }}</span>
             </div>

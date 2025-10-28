@@ -25,12 +25,12 @@
             <span class="status-badge {% if mfa_enabled %}enabled{% else %}disabled{% endif %}">
                 {% if mfa_enabled %}
                 <svg class="icon" aria-hidden="true" focusable="false">
-                    <use href="{% static 'img/icons/check.svg#icon-check' %}"></use>
+                    <use href="{% static 'img/icons/check.svg' %}#icon-check"></use>
                 </svg>
                 Enabled
                 {% else %}
                 <svg class="icon" aria-hidden="true" focusable="false">
-                    <use href="{% static 'img/icons/eye-off.svg#icon-eye-off' %}"></use>
+                    <use href="{% static 'img/icons/eye-off.svg' %}#icon-eye-off"></use>
                 </svg>
                 Disabled
                 {% endif %}
@@ -57,7 +57,7 @@
                 <div class="page-actions">
                     <a href="{% url 'regenerate_recovery_codes' %}" class="btn btn-secondary">
                         <svg class="icon" aria-hidden="true" focusable="false">
-                            <use href="{% static 'img/icons/copy.svg#icon-copy' %}"></use>
+                            <use href="{% static 'img/icons/copy.svg' %}#icon-copy"></use>
                         </svg>
                         Regenerate recovery codes
                     </a>
