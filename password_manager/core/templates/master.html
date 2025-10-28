@@ -1,20 +1,33 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Password Manager{% endblock %}</title>
     {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}">
 </head>
 <body>
-<div class="site-header">
-{% include "header.html" %}
+<div class="app-shell">
+    <header class="top-bar">
+        {% include "header.html" %}
+    </header>
+    <main class="app-main">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
 </div>
-<div class="main-content">
-{% block content %}
-{% endblock %}
+<div class="modal-overlay" data-modal-overlay></div>
+<div class="toast-stack" data-toast-stack aria-live="polite" aria-atomic="true"></div>
+{% if messages %}
+<div class="visually-hidden" data-message-source>
+    {% for message in messages %}
+    <span data-message data-level="{{ message.tags }}">{{ message }}</span>
+    {% endfor %}
 </div>
+{% endif %}
+<script src="{% static 'js/app.js' %}" defer></script>
 </body>
 </html>

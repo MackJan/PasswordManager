@@ -1,152 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Verify Email</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body class="form-page">
-    <div class="form-container">
-        <div class="form-title">
-            <h1>Password Manager</h1>
-        </div>
+{% extends "master.html" %}
 
-        <h2 class="form-subtitle">Email Verification Required</h2>
+{% block title %}Verify your email{% endblock %}
 
-        <!-- Display messages -->
-        {% if messages %}
-        <div class="messages">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <div class="form-content">
-            <div class="verification-message">
-                <div class="verification-icon">
-                    ✉️
-                </div>
-                <h3>Check Your Email</h3>
-                <p>Thank you for signing up! To complete your registration, please check your email for a verification link.</p>
-
-                <div class="info-box">
-                    <h4>What to do next:</h4>
-                    <ol>
-                        <li>Check your email inbox</li>
-                        <li>Look for an email from {{ site.name|default:"Password Manager" }}</li>
-                        <li>Click the verification link in the email</li>
-                        <li>Your account will be activated</li>
-                    </ol>
-                </div>
-
-                <div class="help-text">
-                    <p><strong>Didn't receive the email?</strong></p>
-                    <ul>
-                        <li>Check your spam/junk folder</li>
-                        <li>Make sure you entered the correct email address</li>
-                        <li>Wait a few minutes and check again</li>
-                        <li>If you cant't receive the email, contact support.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-footer">
-            <p><a href="{% url 'account_login' %}">Back to Login</a></p>
-            <p><a href="{% url 'account_signup' %}">Try again with a different email</a></p>
-        </div>
+{% block content %}
+<section class="card form-card">
+    <span class="badge">Almost there</span>
+    <h1 class="page-title">Verify your inbox</h1>
+    <p class="page-description">We've sent a confirmation email to finish activating your account. Follow the link to continue.</p>
+    <div class="card-stack">
+        <p class="page-description">If nothing arrives:</p>
+        <ul class="list-muted">
+            <li>Check spam or junk folders.</li>
+            <li>Confirm you entered the correct address.</li>
+            <li>Resend the email from your profile settings.</li>
+        </ul>
     </div>
-
-    <style>
-        .verification-message {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .verification-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-        }
-
-        .verification-message h3 {
-            color: #2c3e50;
-            margin-bottom: 16px;
-            font-size: 24px;
-        }
-
-        .verification-message > p {
-            color: #6c757d;
-            font-size: 16px;
-            line-height: 1.5;
-            margin-bottom: 24px;
-        }
-
-        .info-box {
-            background-color: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .info-box h4 {
-            color: #1565c0;
-            margin-top: 0;
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-
-        .info-box ol {
-            color: #1565c0;
-            margin-bottom: 0;
-            padding-left: 20px;
-        }
-
-        .info-box li {
-            margin-bottom: 8px;
-        }
-
-        .help-text {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 16px;
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .help-text p {
-            color: #856404;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .help-text ul {
-            color: #856404;
-            margin-bottom: 0;
-            padding-left: 20px;
-        }
-
-        .help-text li {
-            margin-bottom: 4px;
-        }
-
-        .messages {
-            margin-bottom: 20px;
-        }
-
-        .form-footer {
-            margin-top: 32px;
-        }
-
-        .form-footer p {
-            margin-bottom: 8px;
-        }
-    </style>
-</body>
-</html>
+    <div class="form-footer">
+        <p><a href="{% url 'account_login' %}">Back to sign in</a></p>
+        <p><a href="{% url 'account_signup' %}">Start over with another email</a></p>
+    </div>
+</section>
+{% endblock %}

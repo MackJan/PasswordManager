@@ -1,252 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Recovery Codes</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body>
-    {% include 'header.html' %}
+{% extends "master.html" %}
+{% load static %}
 
-    <div class="container">
-        <div class="form-container" style="max-width: 600px;">
-            <div class="form-title">
-                <h1>Your Recovery Codes</h1>
-            </div>
+{% block title %}Recovery codes{% endblock %}
 
-            <div class="recovery-codes-section">
-                <div class="warning-notice">
-                    <h2>⚠️ Important: Save These Recovery Codes</h2>
-                    <p>These codes can be used to access your account if you lose access to your authenticator app. Each code can only be used once.</p>
-                    <p><strong>Store them in a safe place and don't share them with anyone.</strong></p>
-                </div>
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Recovery codes</h1>
+        <p class="page-description">Store these codes in a secure place. Each code is single-use and acts as a backup when you can't access your authenticator.</p>
+    </div>
+</section>
 
-                <div class="recovery-codes-container">
-                    <div class="recovery-codes-grid">
-                        {% for code in recovery_codes %}
-                            <div class="recovery-code-item">
-                                <code>{{ code }}</code>
-                            </div>
-                        {% endfor %}
-                    </div>
-
-                    <div class="codes-actions">
-                        <button onclick="printCodes()" class="btn btn-secondary">
-                            🖨️ Print Codes
-                        </button>
-                        <button onclick="downloadCodes()" class="btn btn-secondary">
-                            💾 Download as Text
-                        </button>
-                        <button onclick="copyCodes()" class="btn btn-secondary">
-                            📋 Copy All Codes
-                        </button>
-                    </div>
-                </div>
-
-                <div class="completion-section">
-                    <div class="checkbox-container">
-                        <input type="checkbox" id="saved-confirmation" onchange="toggleContinue()">
-                        <label for="saved-confirmation">
-                            I have saved these recovery codes in a safe place
-                        </label>
-                    </div>
-
-                    <div class="form-actions">
-                        <button id="continue-btn" onclick="clearCodesAndContinue()" class="btn btn-primary" disabled>
-                            Continue to Security Settings
-                        </button>
-                    </div>
-                </div>
-            </div>
+<section class="card card-stack">
+    <div class="alert-inline">
+        Save these codes somewhere safe. Anyone with access can sign in to your account.
+    </div>
+    <div class="card card-compact">
+        <div class="recovery-grid">
+            {% for code in recovery_codes %}
+            <div class="recovery-code" id="recovery-code-{{ forloop.counter }}">{{ code }}</div>
+            {% endfor %}
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn btn-secondary" data-action="print-recovery">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                    <use href="{% static 'img/icons/print.svg' %}#icon-print"></use>
+                </svg>
+                Print
+            </button>
+            <button type="button" class="btn btn-secondary" data-download="recovery-codes-text" data-filename="vaultlock-recovery-codes.txt">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                    <use href="{% static 'img/icons/download.svg' %}#icon-download"></use>
+                </svg>
+                Download
+            </button>
+            <button type="button" class="btn btn-secondary" data-copy="recovery-codes-text">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                    <use href="{% static 'img/icons/copy.svg' %}#icon-copy"></use>
+                </svg>
+                Copy
+            </button>
         </div>
     </div>
+    <label class="info-row">
+        <span class="info-label">Confirmation</span>
+        <span class="info-value">
+            <input type="checkbox" id="saved-codes" data-confirm-toggle="recovery-continue">
+            I've stored these safely
+        </span>
+    </label>
+    <div class="page-actions">
+        <a href="{% url 'security_settings' %}" class="btn btn-ghost">Back to security</a>
+        <button type="button" class="btn btn-primary" id="recovery-continue" data-redirect="{% url 'security_settings' %}" disabled>Continue</button>
+    </div>
+</section>
 
-    <style>
-        .recovery-codes-section {
-            margin: 20px 0;
-        }
-
-        .warning-notice {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        .warning-notice h2 {
-            color: #856404;
-            margin-top: 0;
-            margin-bottom: 12px;
-            font-size: 18px;
-        }
-
-        .warning-notice p {
-            color: #856404;
-            margin-bottom: 8px;
-        }
-
-        .recovery-codes-container {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-
-        .recovery-codes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .recovery-code-item {
-            background-color: white;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .recovery-code-item code {
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
-            color: #2c3e50;
-            letter-spacing: 1px;
-        }
-
-        .codes-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .completion-section {
-            background-color: white;
-            border-radius: 8px;
-            padding: 24px;
-            text-align: center;
-        }
-
-        .checkbox-container {
-            margin-bottom: 20px;
-        }
-
-        .checkbox-container input[type="checkbox"] {
-            margin-right: 8px;
-            transform: scale(1.2);
-        }
-
-        .checkbox-container label {
-            font-size: 16px;
-            color: #495057;
-            cursor: pointer;
-        }
-
-        .form-actions {
-            margin-top: 20px;
-        }
-
-        #continue-btn:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-
-            .recovery-codes-container,
-            .recovery-codes-container * {
-                visibility: visible;
-            }
-
-            .recovery-codes-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-
-            .codes-actions {
-                display: none !important;
-            }
-        }
-    </style>
-
-    <script>
-        function toggleContinue() {
-            const checkbox = document.getElementById('saved-confirmation');
-            const continueBtn = document.getElementById('continue-btn');
-            continueBtn.disabled = !checkbox.checked;
-        }
-
-        function printCodes() {
-            window.print();
-        }
-
-        function downloadCodes() {
-            const codes = [{% for code in recovery_codes %}'{{ code }}'{% if not forloop.last %},{% endif %}{% endfor %}];
-            const content = 'Password Manager Recovery Codes\n' +
-                          'Generated: ' + new Date().toLocaleDateString() + '\n\n' +
-                          'IMPORTANT: Store these codes safely. Each can only be used once.\n\n' +
-                          codes.join('\n') + '\n\n' +
-                          'Do not share these codes with anyone.';
-
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'password-manager-recovery-codes.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-        }
-
-        function copyCodes() {
-            const codes = [{% for code in recovery_codes %}'{{ code }}'{% if not forloop.last %},{% endif %}{% endfor %}];
-            const content = codes.join('\n');
-
-            navigator.clipboard.writeText(content).then(function() {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = '✅ Copied!';
-                btn.style.backgroundColor = '#28a745';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.backgroundColor = '';
-                }, 2000);
-            });
-        }
-
-        function clearCodesAndContinue() {
-            // Clear the codes from session and redirect
-            fetch('{% url "security_settings" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({action: 'clear_codes'})
-            }).then(() => {
-                window.location.href = '{% url "security_settings" %}';
-            });
-        }
-
-        // Clear codes from session when page is unloaded
-        window.addEventListener('beforeunload', function() {
-            navigator.sendBeacon('{% url "security_settings" %}',
-                new FormData(document.createElement('form')));
-        });
-    </script>
-</body>
-</html>
+<div id="recovery-codes-text" class="visually-hidden">{{ recovery_codes|join:"\n" }}</div>
+{% endblock %}

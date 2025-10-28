@@ -1,247 +1,58 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Enable 2FA</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body>
-    {% include 'header.html' %}
+{% extends "master.html" %}
+{% load static %}
 
-    <div class="container">
-        <div class="form-container" style="max-width: 600px;">
-            <div class="form-title">
-                <h1>Enable Two-Factor Authentication</h1>
-            </div>
+{% block title %}Enable two-factor authentication{% endblock %}
 
-            <!-- Display messages -->
-            {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Enable two-factor authentication</h1>
+        <p class="page-description">Secure your vault by requiring a one-time code from an authenticator app each time you sign in.</p>
+    </div>
+</section>
 
-            <div class="setup-steps">
-                <div class="step">
-                    <h2>Step 1: Install an Authenticator App</h2>
-                    <p>Download and install an authenticator app on your mobile device:</p>
-                    <div class="app-recommendations">
-                        <div class="app-item">
-                            <strong>Google Authenticator</strong>
-                            <span>Free for iOS and Android</span>
-                        </div>
-                        <div class="app-item">
-                            <strong>Authy</strong>
-                            <span>Free for iOS and Android</span>
-                        </div>
-                        <div class="app-item">
-                            <strong>Microsoft Authenticator</strong>
-                            <span>Free for iOS and Android</span>
-                        </div>
-                    </div>
-                </div>
+<section class="card-stack">
+    <article class="card card-compact">
+        <h2>Step 1</h2>
+        <p class="page-description">Install an authenticator app such as Google Authenticator, 1Password, Authy, or Microsoft Authenticator.</p>
+    </article>
 
-                <div class="step">
-                    <h2>Step 2: Scan QR Code</h2>
-                    <p>Open your authenticator app and scan this QR code:</p>
-
-                    <div class="qr-code-section">
-                        <div class="qr-code">
-                            <img src="data:image/png;base64,{{ qr_code_data }}" alt="QR Code for 2FA Setup" />
-                        </div>
-
-                        <div class="manual-entry">
-                            <p><strong>Can't scan the code?</strong></p>
-                            <p>Manually enter this secret key in your authenticator app:</p>
-                            <div class="secret-key">
-                                <code>{{ secret }}</code>
-                                <button type="button" onclick="copySecret()" class="copy-btn">Copy</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="step">
-                    <h2>Step 3: Enter Verification Code</h2>
-                    <p>Enter the 6-digit code from your authenticator app to complete setup:</p>
-
-                    <form method="post" class="verification-form">
-                        {% csrf_token %}
-                        <div class="form-group">
-                            <label for="code">Authentication Code</label>
-                            <input type="text"
-                                   id="code"
-                                   name="code"
-                                   class="form-control code-input"
-                                   placeholder="000000"
-                                   maxlength="6"
-                                   pattern="[0-9]{6}"
-                                   required
-                                   autocomplete="off">
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">Verify and Enable 2FA</button>
-                            <a href="{% url 'security_settings' %}" class="btn btn-secondary">Cancel</a>
-                        </div>
-                    </form>
+    <article class="card card-stack">
+        <div class="card-compact">
+            <h2>Step 2</h2>
+            <p class="page-description">Scan the QR code below with your authenticator app.</p>
+        </div>
+        <div class="card card-compact centered-card">
+            <img src="data:image/png;base64,{{ qr_code_data }}" alt="QR code for two-factor setup">
+            <div class="card-stack">
+                <span class="field-hint">Can't scan the code? Enter the secret manually.</span>
+                <code class="code-block" id="totp-secret">{{ secret }}</code>
+                <div class="page-actions">
+                    <button type="button" class="btn btn-secondary" data-copy="totp-secret">
+                        <svg class="icon" aria-hidden="true" focusable="false">
+                            <use href="{% static 'img/icons/copy.svg' %}#icon-copy"></use>
+                        </svg>
+                        Copy secret
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+    </article>
 
-    <style>
-        .setup-steps {
-            margin: 20px 0;
-        }
-
-        .step {
-            background: white;
-            border-radius: 8px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .step h2 {
-            color: #2c3e50;
-            margin-bottom: 12px;
-            font-size: 18px;
-        }
-
-        .app-recommendations {
-            background-color: #f8f9fa;
-            padding: 16px;
-            border-radius: 6px;
-            margin-top: 12px;
-        }
-
-        .app-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .app-item:last-child {
-            border-bottom: none;
-        }
-
-        .qr-code-section {
-            text-align: center;
-            margin: 20px 0;
-        }
-
-        .qr-code {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            display: inline-block;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .qr-code img {
-            max-width: 200px;
-            height: auto;
-        }
-
-        .manual-entry {
-            background-color: #f8f9fa;
-            padding: 16px;
-            border-radius: 6px;
-            margin-top: 16px;
-        }
-
-        .secret-key {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 8px;
-        }
-
-        .secret-key code {
-            background-color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 14px;
-            border: 1px solid #dee2e6;
-            word-break: break-all;
-        }
-
-        .copy-btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .copy-btn:hover {
-            background-color: #0056b3;
-        }
-
-        .verification-form {
-            max-width: 300px;
-            margin: 0 auto;
-        }
-
-        .code-input {
-            text-align: center;
-            font-size: 18px;
-            font-family: monospace;
-            letter-spacing: 2px;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-    </style>
-
-    <script>
-        function copySecret() {
-            const secretText = '{{ secret }}';
-            navigator.clipboard.writeText(secretText).then(function() {
-                const btn = document.querySelector('.copy-btn');
-                const originalText = btn.textContent;
-                btn.textContent = 'Copied!';
-                btn.style.backgroundColor = '#28a745';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.style.backgroundColor = '#007bff';
-                }, 2000);
-            });
-        }
-
-        // Auto-focus and format the code input
-        document.addEventListener('DOMContentLoaded', function() {
-            const codeInput = document.getElementById('code');
-            codeInput.focus();
-
-            codeInput.addEventListener('input', function(e) {
-                // Only allow numbers
-                e.target.value = e.target.value.replaceAll(/\D/g, '');
-
-                // Auto-submit when 6 digits are entered
-                if (e.target.value.length === 6) {
-                    e.target.form.submit();
-                }
-            });
-        });
-    </script>
-</body>
-</html>
-
+    <article class="card card-compact">
+        <h2>Step 3</h2>
+        <p class="page-description">Enter the 6-digit code displayed in your app to confirm setup.</p>
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+            <label for="code">
+                Authentication code
+                <input type="text" id="code" name="code" pattern="[0-9]{6}" maxlength="6" required autocomplete="off" inputmode="numeric" placeholder="000000">
+            </label>
+            <div class="page-actions">
+                <button type="submit" class="btn btn-primary">Verify and enable</button>
+                <a href="{% url 'security_settings' %}" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </article>
+</section>
+{% endblock %}

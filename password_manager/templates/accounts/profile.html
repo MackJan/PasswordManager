@@ -1,69 +1,68 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Profile</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body>
-    {% include 'header.html' %}
+{% extends "master.html" %}
+{% load static %}
 
-    <div class="container">
-        <div class="profile-container">
-            <h1>Account Profile</h1>
+{% block title %}Profile{% endblock %}
 
-            <!-- Display messages -->
-            {% if messages %}
-            <div class="messages">
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-                {% endfor %}
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Account profile</h1>
+        <p class="page-description">Manage your personal details and keep track of your account activity.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'security_settings' %}" class="btn btn-secondary">
+            <svg class="icon" aria-hidden="true" focusable="false">
+                <use href="{% static 'img/icons/lock.svg' %}#icon-lock"></use>
+            </svg>
+            Security settings
+        </a>
+    </div>
+</section>
+
+<section class="card-stack">
+    <article class="card">
+        <h2>Account details</h2>
+        <div class="info-grid">
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value">{{ user.email }}</span>
             </div>
-            {% endif %}
-
-            <div class="profile-section">
-                <h2>Account Information</h2>
-                <div class="profile-info">
-                    <div class="info-item">
-                        <h2>Email:</h2>
-                        <span>{{ user.email }}</span>
-                    </div>
-                    <div class="info-item">
-                        <h2>Account Created:</h2>
-                        <span>{{ user.date_joined|date:"F d, Y" }}</span>
-                    </div>
-                    <div class="info-item">
-                        <h2>Last Login:</h2>
-                        <span>{{ user.last_login|date:"F d, Y g:i A" }}</span>
-                    </div>
-                </div>
+            <div class="info-row">
+                <span class="info-label">Member since</span>
+                <span class="info-value">{{ user.date_joined|date:"F d, Y" }}</span>
             </div>
-
-            <div class="profile-section">
-                <h2>Security Settings</h2>
-                <div class="security-overview">
-                    <div class="security-item">
-                        <div class="security-status">
-                            <h3>Two-Factor Authentication</h3>
-                            {% if mfa_enabled %}
-                                <span class="status-badge enabled">✓ Enabled</span>
-                                <p>Your account is protected with 2FA</p>
-                            {% else %}
-                                <span class="status-badge disabled">⚠ Disabled</span>
-                                <p>Add an extra layer of security to your account</p>
-                            {% endif %}
-                        </div>
-                        <div class="security-actions">
-                            <a href="{% url 'security_settings' %}" class="btn btn-primary">Manage Security</a>
-                        </div>
-                    </div>
-                </div>
+            <div class="info-row">
+                <span class="info-label">Last login</span>
+                <span class="info-value">{{ user.last_login|date:"F d, Y g:i A"|default:"—" }}</span>
             </div>
         </div>
-    </div>
-</body>
-</html>
+    </article>
+
+    <article class="card">
+        <h2>Security overview</h2>
+        <p class="page-description">Control how you authenticate and recover access to your account.</p>
+        <div class="card-stack">
+            <div>
+                {% if mfa_enabled %}
+                    <span class="status-badge enabled">
+                        <svg class="icon" aria-hidden="true" focusable="false">
+                            <use href="{% static 'img/icons/check.svg' %}#icon-check"></use>
+                        </svg>
+                        2FA enabled
+                    </span>
+                    <p class="field-hint">Your authenticator app is required when signing in.</p>
+                {% else %}
+                    <span class="status-badge disabled">
+                        <svg class="icon" aria-hidden="true" focusable="false">
+                            <use href="{% static 'img/icons/eye-off.svg' %}#icon-eye-off"></use>
+                        </svg>
+                        2FA disabled
+                    </span>
+                    <p class="field-hint">Add a second factor to better protect your vault.</p>
+                {% endif %}
+            </div>
+            <a href="{% url 'security_settings' %}" class="btn btn-primary">Manage security</a>
+        </div>
+    </article>
+</section>
+{% endblock %}

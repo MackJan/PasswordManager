@@ -1,266 +1,221 @@
 {% extends "master.html" %}
+{% load static %}
 
-{% block title %}
-Password Manager Vault
-{% endblock %}
+{% block title %}Vault{% endblock %}
 
 {% block content %}
-<head>
-    <title>Password Manager - Vault</title>
-    <script>
-        // When the user clicks on <div>, open the popup
-        function showPopup() {
-            let popup = document.getElementById("item-popup");
-            let backdrop = document.getElementById("popup-backdrop");
-            popup.classList.add("show");
-            backdrop.classList.add("show");
-        }
-
-        // Show edit popup for specific item
-        function showEditPopup(itemId) {
-            let popup = document.getElementById("edit-item-" + itemId);
-            let backdrop = document.getElementById("popup-backdrop");
-            popup.classList.add("show");
-            backdrop.classList.add("show");
-        }
-
-        // Close the popup
-        function closePopup() {
-            let popup = document.getElementById("item-popup");
-            let backdrop = document.getElementById("popup-backdrop");
-            let editPopups = document.querySelectorAll('.edit-popup');
-            let deletePopup = document.getElementById("delete-confirmation-popup");
-            popup.classList.remove("show");
-            backdrop.classList.remove("show");
-            deletePopup.classList.remove("show");
-            for (const editPopup of editPopups) {
-                editPopup.classList.remove("show");
-            }
-        }
-
-        // Close popup when clicking outside of it
-        globalThis.onclick = function (event) {
-            let backdrop = document.getElementById("popup-backdrop");
-            if (event.target === backdrop) {
-                closePopup();
-            }
-        }
-
-        // Show delete confirmation popup
-        function confirmDelete(itemId, itemName) {
-            let popup = document.getElementById("delete-confirmation-popup");
-            let backdrop = document.getElementById("popup-backdrop");
-            let itemNameSpan = document.getElementById("delete-item-name");
-            let confirmBtn = document.getElementById("confirm-delete-btn");
-
-            // Set the item name in the popup
-            itemNameSpan.textContent = itemName;
-
-            // Set up the confirm button to submit the correct form
-            confirmBtn.onclick = function() {
-                document.getElementById('delete-form-' + itemId).submit();
-            };
-
-            // Show the popup
-            popup.classList.add("show");
-            backdrop.classList.add("show");
-        }
-
-        // Toggle password visibility
-        function togglePassword(itemId) {
-            let item = document.getElementById(itemId);
-            if(item.classList.contains('hidden')) {
-                item.classList.remove('hidden');
-            }
-            else{
-                item.classList.add('hidden');
-            }
-        }
-
-        // Cancel delete action
-        function cancelDelete() {
-            closePopup();
-        }
-    </script>
-</head>
-<div class="hero-section">
-    <div class="hero-title">
-        <h1>Password Manager Vault</h1>
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Password vault</h1>
+        <p class="page-description">Review, reveal, and update stored credentials. Everything stays encrypted until you choose to view it.</p>
     </div>
+    <div class="page-actions">
+        <button type="button" class="btn btn-primary" data-modal-open="create-item">
+            <svg class="icon" aria-hidden="true" focusable="false">
+                <use href="{% static 'img/icons/add.svg' %}#icon-add"></use>
+            </svg>
+            New item
+        </button>
+    </div>
+</section>
 
-    <h2 class="hero-subtitle">Welcome to Your Vault</h2>
-    <p class="hero-subtitle">Here you can see and manage your stored passwords</p>
-
-    <div class="vault-items-container">
-        <!-- Display error/success messages -->
-        {% if messages %}
-        <div class="alert alert-primary" role="alert">
-            {% for message in messages %}
-            {{ message }}
-            {% endfor %}
-        </div>
-        {% endif %}
-
+<section class="card table-card">
+    <div class="table-toolbar">
+        <label class="search-field" for="vault-search">
+            <svg class="icon" aria-hidden="true" focusable="false">
+                <use href="{% static 'img/icons/search.svg' %}#icon-search"></use>
+            </svg>
+            <input id="vault-search" type="search" placeholder="Search vault" data-filter="vault" aria-label="Filter saved credentials">
+        </label>
+        <span class="badge">{{ items|length }} saved</span>
+    </div>
+    {% if items %}
+    <table class="vault-table" role="grid">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Username</th>
+                <th scope="col">Password</th>
+                <th scope="col">URL</th>
+                <th scope="col">Notes</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+        </thead>
+        <tbody>
         {% for item in items %}
-        <div class="vault-item">
-            <div class="item-info">
-                <div class="item-field">
-                    <span class="item-label">Name</span>
-                    <span class="item-value item-title">{{ item.name }}</span>
-                </div>
-                <div class="item-field">
-                    <span class="item-label">Username</span>
-                    <span class="item-value item-username">{{ item.username }}</span>
-                </div>
-                <div class="item-field">
-                    <span class="item-label">Password</span>
-                    <span id="{{ item.id }}" class="item-value item-password hidden">
-                        <span class="password-text">{{ item.password }}</span>
-                    </span>
-                </div>
-                {% if item.url %}
-                <div class="item-field">
-                    <span class="item-label">URL</span>
-                    <span class="item-value item-url">{{ item.url }}</span>
-                </div>
-                {% endif %}
-                {% if item.notes %}
-                <div class="item-field">
-                    <span class="item-label">Notes</span>
-                    <span class="item-value item-notes">{{ item.notes }}</span>
-                </div>
-                {% endif %}
-                <div class="item-actions">
-                    <button class="btn btn-primary" onclick="togglePassword('{{ item.id }}')">Show</button>
-                    <button class="btn btn-primary" onclick="showEditPopup('{{ item.id }}')">Edit</button>
-                    <button class="btn btn-danger" onclick="confirmDelete('{{ item.id }}', '{{ item.name }}')">Delete</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Hidden delete form for each item -->
-        <form id="delete-form-{{ item.id }}" method="post" style="display: none;">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="delete">
-            <input type="hidden" name="id" value="{{ item.id }}">
-        </form>
-
-        <!-- Edit popup for each item -->
-        <div id="edit-item-{{ item.id }}" class="edit-popup">
-            <div class="form-container">
-                <button onclick="closePopup()" class="close-button">&times;</button>
-                <h2 class="form-title">Edit Vault Item "{{ item.name }}"</h2>
-
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="edit">
-                    <input type="hidden" name="id" value="{{ item.id }}">
-
-                    <div class="form-group">
-                        <label for="edit-name-{{ item.id }}">Name</label>
-                        <input type="text" class="form-control" name="name" id="edit-name-{{ item.id }}"
-                               placeholder="Enter the Items name" value="{{ item.name }}" required>
+            <tr data-vault-row data-search="{{ item.name }} {{ item.username }} {{ item.url }} {{ item.notes|default:'' }}">
+                <td data-label="Name">
+                    <strong>{{ item.name }}</strong>
+                </td>
+                <td data-label="Username">
+                    <span>{{ item.username }}</span>
+                </td>
+                <td data-label="Password">
+                    <div class="password-field" id="password-field-{{ item.id }}" data-visible="false">
+                        <span class="password-text" id="password-text-{{ item.id }}">{{ item.password }}</span>
                     </div>
-
-                    <div class="form-group">
-                        <label for="edit-username-{{ item.id }}">Username</label>
-                        <input type="text" class="form-control" name="username" id="edit-username-{{ item.id }}"
-                               placeholder="Enter the Items username" value="{{ item.username }}" required>
+                    <div class="action-group">
+                        <button type="button" class="btn btn-secondary" data-toggle-password="password-field-{{ item.id }}" data-eye-on="{% static 'img/icons/eye.svg' %}#icon-eye" data-eye-off="{% static 'img/icons/eye-off.svg' %}#icon-eye-off" aria-pressed="false">
+                            <svg class="icon" aria-hidden="true" focusable="false">
+                                <use href="{% static 'img/icons/eye.svg' %}#icon-eye"></use>
+                            </svg>
+                            <span data-toggle-label>Reveal</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-copy="password-text-{{ item.id }}">
+                            <svg class="icon" aria-hidden="true" focusable="false">
+                                <use href="{% static 'img/icons/copy.svg' %}#icon-copy"></use>
+                            </svg>
+                            Copy
+                        </button>
                     </div>
-
-                    <div class="form-group">
-                        <label for="edit-password-{{ item.id }}">Password</label>
-                        <input type="password" name="password" class="form-control" id="edit-password-{{ item.id }}"
-                               placeholder="Enter the password to store" value="{{ item.password }}" required>
+                </td>
+                <td data-label="URL" class="cell-muted">
+                    {% if item.url %}
+                        <a href="{{ item.url }}" target="_blank" rel="noopener" class="btn btn-ghost">Visit</a>
+                    {% else %}
+                        <span>—</span>
+                    {% endif %}
+                </td>
+                <td data-label="Notes" class="cell-muted">
+                    {% if item.notes %}
+                        {{ item.notes }}
+                    {% else %}
+                        <span>—</span>
+                    {% endif %}
+                </td>
+                <td data-label="Actions">
+                    <div class="action-group">
+                        <button type="button" class="btn btn-secondary" data-modal-open="edit-{{ item.id }}">
+                            <svg class="icon" aria-hidden="true" focusable="false">
+                                <use href="{% static 'img/icons/edit.svg' %}#icon-edit"></use>
+                            </svg>
+                            Edit
+                        </button>
+                        <button type="button" class="btn btn-danger" data-modal-open="delete-item" data-item-name="{{ item.name }}" data-form-id="delete-form-{{ item.id }}">
+                            <svg class="icon" aria-hidden="true" focusable="false">
+                                <use href="{% static 'img/icons/trash.svg' %}#icon-trash"></use>
+                            </svg>
+                            Delete
+                        </button>
                     </div>
-
-                    <div class="form-group">
-                        <label for="edit-url-{{ item.id }}">URL</label>
-                        <input type="url" class="form-control" name="url" id="edit-url-{{ item.id }}"
-                               placeholder="Enter the website URL" value="{{ item.url }}">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="edit-notes-{{ item.id }}">Notes</label>
-                        <textarea class="form-control" name="notes" id="edit-notes-{{ item.id }}"
-                                  placeholder="Enter any additional notes" rows="3">{{ item.notes }}</textarea>
-                    </div>
-
-                    <button type="submit" class="form-button">Update Item</button>
-                </form>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <button class="btn btn-primary popup" onclick="showPopup()">Add Item</button>
-
-    <!-- Backdrop overlay -->
-    <div id="popup-backdrop" class="popup-backdrop"></div>
-
-    <!-- Create item popup -->
-    <div id="item-popup">
-        <div class="form-container">
-            <button onclick="closePopup()" class="close-button">&times;</button>
-            <div class="form-title">
-                <h1>Item Creation</h1>
-            </div>
-            <h2 class="form-subtitle">Add a Vault Item</h2>
-
-            <form method="post" enctype="multipart/form-data">
+                </td>
+            </tr>
+            <form id="delete-form-{{ item.id }}" method="post" class="visually-hidden">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="create">
-
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" class="form-control" name="name" id="name"
-                           placeholder="Enter the Items name" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="username">Username</label>
-                    <input type="text" class="form-control" name="username" id="username"
-                           placeholder="Enter the Items username" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" name="password" class="form-control" id="password"
-                           placeholder="Enter the password to store" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="url">URL</label>
-                    <input type="url" class="form-control" name="url" id="url"
-                           placeholder="Enter the website URL">
-                </div>
-
-                <div class="form-group">
-                    <label for="notes">Notes</label>
-                    <textarea class="form-control" name="notes" id="notes"
-                              placeholder="Enter any additional notes" rows="3"></textarea>
-                </div>
-
-                <button type="submit" class="form-button">Create Item</button>
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="id" value="{{ item.id }}">
             </form>
-        </div>
-    </div>
 
-    <!-- Delete confirmation popup -->
-    <div id="delete-confirmation-popup" class="delete-popup">
-        <div class="delete-container">
-            <button onclick="closePopup()" class="close-button">&times;</button>
-            <div class="delete-title">
-                <h1>⚠️ Confirm Deletion</h1>
+            <div class="modal" data-modal="edit-{{ item.id }}" aria-hidden="true" role="dialog" aria-modal="true">
+                <div class="modal-panel">
+                    <div class="modal-header">
+                        <h2>Edit {{ item.name }}</h2>
+                        <button type="button" class="modal-close" data-modal-close aria-label="Close">
+                            <svg class="icon" aria-hidden="true" focusable="false">
+                                <use href="{% static 'img/icons/x.svg' %}#icon-x"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    <form method="post" class="form-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="edit">
+                        <input type="hidden" name="id" value="{{ item.id }}">
+                        <label>
+                            Name
+                            <input type="text" name="name" value="{{ item.name }}" required autocomplete="off">
+                        </label>
+                        <label>
+                            Username
+                            <input type="text" name="username" value="{{ item.username }}" required autocomplete="off">
+                        </label>
+                        <label>
+                            Password
+                            <input type="password" name="password" value="{{ item.password }}" required autocomplete="off">
+                        </label>
+                        <label>
+                            URL
+                            <input type="url" name="url" value="{{ item.url }}" autocomplete="off">
+                        </label>
+                        <label>
+                            Notes
+                            <textarea name="notes" rows="3">{{ item.notes }}</textarea>
+                        </label>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="delete-message">
-                <p>Are you sure you want to delete "<span id="delete-item-name"></span>"?</p>
-                <p class="warning-text">This action cannot be undone.</p>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <svg class="icon" aria-hidden="true" focusable="false">
+            <use href="{% static 'img/icons/lock.svg' %}#icon-lock"></use>
+        </svg>
+        <p>No credentials stored yet. Create your first item to get started.</p>
+        <button type="button" class="btn btn-primary" data-modal-open="create-item">Add item</button>
+    </div>
+    {% endif %}
+</section>
+
+<div class="modal" data-modal="create-item" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <h2>Add vault item</h2>
+            <button type="button" class="modal-close" data-modal-close aria-label="Close">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                    <use href="{% static 'img/icons/x.svg' %}#icon-x"></use>
+                </svg>
+            </button>
+        </div>
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <label>
+                Name
+                <input type="text" name="name" required autocomplete="off" data-initial-focus>
+            </label>
+            <label>
+                Username
+                <input type="text" name="username" required autocomplete="off">
+            </label>
+            <label>
+                Password
+                <input type="password" name="password" required autocomplete="off">
+            </label>
+            <label>
+                URL
+                <input type="url" name="url" autocomplete="off">
+            </label>
+            <label>
+                Notes
+                <textarea name="notes" rows="3"></textarea>
+            </label>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+                <button type="submit" class="btn btn-primary">Create item</button>
             </div>
-            <div class="delete-actions">
-                <button type="button" class="btn btn-secondary" onclick="cancelDelete()">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Delete</button>
-            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal" data-modal="delete-item" aria-hidden="true" role="alertdialog" aria-modal="true">
+    <div class="modal-panel">
+        <div class="modal-header">
+            <h2>Confirm deletion</h2>
+            <button type="button" class="modal-close" data-modal-close aria-label="Close">
+                <svg class="icon" aria-hidden="true" focusable="false">
+                    <use href="{% static 'img/icons/x.svg' %}#icon-x"></use>
+                </svg>
+            </button>
+        </div>
+        <p>You're about to delete <strong data-delete-name></strong>. This action cannot be undone.</p>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" data-modal-close>Cancel</button>
+            <button type="button" class="btn btn-danger" data-confirm-delete>Delete</button>
         </div>
     </div>
 </div>

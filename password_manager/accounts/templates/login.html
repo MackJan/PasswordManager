@@ -1,55 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Login</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-</head>
-<body class="form-page">
-    <div class="form-container">
-        <div class="form-title">
-            <h1>Password Manager</h1>
-        </div>
+{% extends "master.html" %}
 
-        <h2 class="form-subtitle">Login</h2>
+{% block title %}Sign in{% endblock %}
 
-        <!-- Display error/success messages -->
-        {% if messages %}
-        <div class="alert alert-primary" role="alert">
-            {% for message in messages %}
-            {{ message }}
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Login form -->
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-
-            <!-- Email input field -->
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="text" class="form-control" name="email" id="email"
-                    placeholder="Enter your email" required>
-            </div>
-
-            <!-- Password input field -->
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" name="password" class="form-control" id="password"
-                    placeholder="Enter your password" required>
-            </div>
-
-            <!-- Submit button -->
-            <button type="submit" class="form-button">Login</button>
-        </form>
-
-        <!-- Link to registration page -->
-        <div class="form-footer">
-            <p>Don't have an account? <a href="/register/">Create one here</a></p>
-        </div>
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Sign in</h1>
+        <p class="page-description">Enter your credentials to access the vault.</p>
     </div>
-</body>
-</html>
+</section>
+
+<section class="card form-card">
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+        {% csrf_token %}
+        <label for="email">
+            Email
+            <input type="email" name="email" id="email" placeholder="name@example.com" required autocomplete="email">
+        </label>
+        <label for="password">
+            Password
+            <input type="password" name="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        </label>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
+    <div class="form-footer">
+        <p>Don't have an account? <a href="/register/">Create one</a>.</p>
+    </div>
+</section>
+{% endblock %}

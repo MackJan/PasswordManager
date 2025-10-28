@@ -1,69 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Manager - Sign Up</title>
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'form-styles.css' %}">
-    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.png' %}" >
-</head>
-<body class="form-page">
-    <div class="form-container">
-        <div class="form-title">
-            <h1>Password Manager</h1>
-        </div>
+{% extends "master.html" %}
 
-        <h2 class="form-subtitle">Create Account</h2>
+{% block title %}Create account{% endblock %}
 
-        <!-- Display error/success messages -->
-        {% if messages %}
-        <div class="alert alert-primary" role="alert">
-            {% for message in messages %}
-            {{ message }}
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <!-- Registration form -->
-        <form method="post" action="{% url 'account_signup' %}">
-            {% csrf_token %}
-
-            <!-- Email input field -->
-            <div class="form-group">
-                <label for="{{ form.email.id_for_label }}">Email</label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                    <div class="form-error">{{ form.email.errors }}</div>
-                {% endif %}
-            </div>
-
-            <!-- Password input field -->
-            <div class="form-group">
-                <label for="{{ form.password1.id_for_label }}">Password</label>
-                {{ form.password1 }}
-                {% if form.password1.errors %}
-                    <div class="form-error">{{ form.password1.errors }}</div>
-                {% endif %}
-            </div>
-
-            <!-- Confirm Password input field -->
-            <div class="form-group">
-                <label for="{{ form.password2.id_for_label }}">Confirm Password</label>
-                {{ form.password2 }}
-                {% if form.password2.errors %}
-                    <div class="form-error">{{ form.password2.errors }}</div>
-                {% endif %}
-            </div>
-
-            <!-- Submit button -->
-            <button type="submit" class="form-button">Create Account</button>
-        </form>
-
-        <!-- Link to login page -->
-        <div class="form-footer">
-            <p>Already have an account? <a href="{% url 'account_login' %}">Login here</a></p>
-        </div>
+{% block content %}
+<section class="page-header">
+    <div>
+        <h1 class="page-title">Create your VaultLock account</h1>
+        <p class="page-description">Sign up with your email address to start storing credentials securely.</p>
     </div>
-</body>
-</html>
+</section>
+
+<section class="card form-card">
+    <form method="post" action="{% url 'account_signup' %}" class="form-grid">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <label for="{{ form.email.id_for_label }}">
+            Email
+            {{ form.email }}
+            {{ form.email.errors }}
+        </label>
+        <label for="{{ form.password1.id_for_label }}">
+            Password
+            {{ form.password1 }}
+            {{ form.password1.errors }}
+        </label>
+        <label for="{{ form.password2.id_for_label }}">
+            Confirm password
+            {{ form.password2 }}
+            {{ form.password2.errors }}
+        </label>
+        <button type="submit" class="btn btn-primary">Create account</button>
+    </form>
+    <div class="form-footer">
+        <p>Already with us? <a href="{% url 'account_login' %}">Sign in instead</a>.</p>
+    </div>
+</section>
+{% endblock %}
