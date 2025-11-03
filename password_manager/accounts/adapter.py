@@ -6,6 +6,7 @@ from django.http import HttpRequest
 from vault.encryption_service import EncryptionService
 from vault.crypto_utils import CryptoError
 from core.logging_utils import get_accounts_logger
+from core.middleware import get_client_ip
 from typing import Optional
 
 User = get_user_model()
@@ -162,9 +163,4 @@ class CustomAccountAdapter(DefaultAccountAdapter):
         """
         Get the client's IP address from the request, considering proxies
         """
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+        return get_client_ip(request)

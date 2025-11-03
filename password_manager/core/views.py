@@ -6,8 +6,9 @@ from core.logging_utils import get_core_logger
 # Get centralized logger
 logger = get_core_logger()
 
+
 def home(request):
-    logger.info("Home page accessed", extra_data={"ip": request.META.get('REMOTE_ADDR')})
+    logger.info("Home page accessed")
     user_email = ""
 
     if request.user.is_authenticated:
@@ -18,8 +19,9 @@ def home(request):
         "authenticated": request.user.is_authenticated,
         "user_email": user_email,
     }
-    return HttpResponse(template.render(context,request))
+    return HttpResponse(template.render(context, request))
+
 
 def root(request):
-    logger.info("Root redirect accessed", extra_data={"ip": request.META.get('REMOTE_ADDR')})
+    logger.info("Root redirect accessed")
     return redirect("/home/")
