@@ -6,13 +6,14 @@ Implements AES-256-GCM AEAD encryption workflow as specified.
 import os
 import json
 import base64
-import logging
 from typing import Dict, Any, Tuple, Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.exceptions import InvalidTag
 from django.conf import settings
 from pathlib import Path
+from core.logging_utils import get_security_logger
 
+logger = get_security_logger()
 
 class CryptoError(Exception):
     """Base exception for cryptographic operations"""
@@ -37,7 +38,6 @@ class AMKManager:
 
     def _load_amks(self):
         """Load AMKs from file storage or environment variables"""
-        logger = logging.getLogger('vault')
 
         # First try to load from environment variable (for production/docker)
         amk_v1 = os.environ.get('AMK_V1')
@@ -99,13 +99,11 @@ class AMKManager:
 
     def get_amk(self, version: int = 1) -> bytes:
         """Get AMK by version"""
-        logger = logging.getLogger('vault')
 
         if version not in self._amk_cache:
             logger.error(f"AMK version {version} not found. Available versions: {list(self._amk_cache.keys())}")
             raise CryptoError(f"AMK version {version} not found")
 
-        logger.debug(f"Retrieved AMK version {version}")
         return self._amk_cache[version]
 
     def get_latest_version(self) -> int:
@@ -201,14 +199,11 @@ def aead_decrypt(key: bytes, nonce: bytes, ciphertext: bytes, aad: bytes = b'') 
         plaintext = aesgcm.decrypt(nonce, ciphertext, aad)
         return plaintext
     except InvalidTag as e:
-        # Enhanced error reporting for production debugging
-        logger = logging.getLogger('vault')
         logger.error(f"AEAD Authentication failed - Key length: {len(key)}, Nonce length: {len(nonce)}, "
-                     f"Ciphertext length: {len(ciphertext)}, AAD: {aad.decode('utf-8', errors='replace')}")
+                     f"Ciphertext length: {len(ciphertext)}, AAD: {aad.decode('utf-8', errors='replace')}, error: {str(e)}")
         raise CryptoError("Authentication failed - data may be corrupted or tampered with")
     except Exception as e:
         # Log any other unexpected errors
-        logger = logging.getLogger('vault')
         logger.error(f"Unexpected AEAD error: {type(e).__name__}: {str(e)}")
         raise CryptoError(f"Decryption failed: {str(e)}")
 
@@ -413,7 +408,6 @@ def secure_zero(data: bytes) -> None:
             ctypes.memset(location, 0, size)
         except Exception as e:
             # Fallback - at least clear the reference and attempt overwriting
-            logger = logging.getLogger('vault')
             logger.warning(f"Secure zeroing failed: {e}")
             try:
                 # Try to overwrite the data by creating a mutable bytearray

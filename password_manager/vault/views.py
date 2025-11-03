@@ -125,8 +125,6 @@ def vault_dashboard(request):
         logger.warning(f"Unauthorized vault access attempt from IP: {get_client_ip(request)}")
         return redirect('/login')
 
-    logger.user_activity(f"user_activity: {request.user.email}",request.user)
-
     if request.method == "POST":
         action = request.POST.get('action', 'create')
 
