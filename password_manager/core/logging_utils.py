@@ -38,14 +38,23 @@ class AppLogger:
 
     def critical(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Log a critical message and also send to alerts."""
-        self._log('critical', message, user, extra_data)
-        # Also log to alerts for critical issues
-        self.alerts_logger.error(f"CRITICAL: {message}")
+        formatted_message, context = self._prepare_message(message, user, extra_data)
+        if context:
+            self.logger.critical(formatted_message, extra=context)
+        else:
+            self.logger.critical(formatted_message)
+        if context:
+            self.alerts_logger.error(f"CRITICAL: {message}", extra=context)
+        else:
+            self.alerts_logger.error(f"CRITICAL: {message}")
 
     def security_event(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Log a security-related event directly to security log."""
-        security_message = f"SECURITY EVENT: {message}"
-        self._log_to_security(security_message, user, extra_data)
+        formatted_message, context = self._prepare_message(f"SECURITY EVENT: {message}", user, extra_data)
+        if context:
+            self.security_logger.warning(formatted_message, extra=context)
+        else:
+            self.security_logger.warning(formatted_message)
 
     def user_activity(self, action: str, user: User, details: Optional[str] = None):
         """Log user activity with consistent format."""
@@ -65,25 +74,40 @@ class AppLogger:
 
     def _log(self, level: str, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Internal method to handle actual logging."""
-        formatted_message = self._format_message(message, user, extra_data)
+        formatted_message, context = self._prepare_message(message, user, extra_data)
         log_method = getattr(self.logger, level)
-        log_method(formatted_message)
+        if context:
+            log_method(formatted_message, extra=context)
+        else:
+            log_method(formatted_message)
 
-    def _log_to_security(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
-        """Log directly to security logger."""
+    def _prepare_message(self, message: str, user: Optional[User], extra_data: Optional[Dict[str, Any]]):
+        """Return the formatted message and logging context."""
         formatted_message = self._format_message(message, user, extra_data)
-        self.security_logger.warning(formatted_message)
+        context = self._build_context(user, extra_data)
+        if context:
+            return formatted_message, {'context': context}
+        return formatted_message, None
+
+    def _build_context(self, user: Optional[User], extra_data: Optional[Dict[str, Any]]):
+        context: Dict[str, Any] = {}
+        if user is not None:
+            context.setdefault('user_email', getattr(user, 'email', None))
+            user_identifier = getattr(user, 'id', getattr(user, 'pk', None))
+            if user_identifier is not None:
+                context.setdefault('user_pk', user_identifier)
+        if extra_data:
+            context.update(extra_data)
+        return context
 
     def _format_message(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Format message with user info and extra data."""
-        # Format message with user info if available
         if user:
             user_email = getattr(user, 'email', 'unknown')
             formatted_message = f"[User: {user_email}] {message}"
         else:
             formatted_message = message
 
-        # Add extra data if provided
         if extra_data:
             extra_info = ", ".join([f"{k}: {v}" for k, v in extra_data.items()])
             formatted_message += f" | Extra: {extra_info}"
@@ -96,13 +120,16 @@ def get_accounts_logger():
     """Get the accounts logger."""
     return AppLogger('accounts')
 
+
 def get_vault_logger():
     """Get the vault logger."""
     return AppLogger('vault')
 
+
 def get_core_logger():
     """Get the core logger."""
     return AppLogger('core')
+
 
 def get_security_logger():
     """Get a logger specifically for security events."""

@@ -62,7 +62,7 @@ class AccountsViewTests(TestCase):
         with patch.object(views, 'logger') as mock_logger:
             response = views.logout_page(request)
 
-        mock_logger.info.assert_called_once_with('User logged out: user@example.com')
+        mock_logger.info.assert_called_once_with('User logged out', user=request.user)
         mock_logout.assert_called_once_with(request)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/login/')

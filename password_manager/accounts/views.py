@@ -67,7 +67,7 @@ def get_recovery_codes_data(codes):
 @require_http_methods(["GET"])
 def logout_page(request):
     if request.user.is_authenticated:
-        logger.info(f"User logged out: {request.user.email}")
+        logger.info("User logged out", user=request.user)
     logout(request)
     return redirect('/login/')
 
@@ -178,7 +178,7 @@ def disable_2fa(request):
     deleted_count = Authenticator.objects.filter(user=user).delete()[0]
 
     if deleted_count > 0:
-        logger.info(f"2FA disabled for user: {user.email}")
+        logger.info("2FA disabled for user", user=user)
         messages.success(request, '2FA has been disabled for your account.')
     else:
         messages.info(request, '2FA was not enabled for your account.')
@@ -207,7 +207,7 @@ def regenerate_recovery_codes(request):
             recovery_auth.data = recovery_data
             recovery_auth.save()
 
-        logger.info(f"Recovery codes regenerated for user: {user.email}")
+        logger.info("Recovery codes regenerated for user", user=user)
         messages.success(request, 'New recovery codes generated!')
 
         # Show new recovery codes
@@ -267,7 +267,7 @@ def recovery_code_login(request):
                 from django.contrib.auth import login
                 login(request, user, backend="allauth.account.auth_backends.AuthenticationBackend")
 
-                logger.info(f"User {user.email} authenticated using recovery code")
+                logger.info("Authenticated using recovery code", user=user)
                 messages.success(request, 'Successfully authenticated using recovery code.')
 
                 # Warn if running low on codes
@@ -276,11 +276,11 @@ def recovery_code_login(request):
 
                 return redirect('home')
             else:
-                logger.warning(f"Invalid recovery code attempt for user: {email}")
+                logger.warning("Invalid recovery code attempt", extra_data={'email': email})
                 messages.error(request, 'Invalid recovery code.')
 
         except CustomUser.DoesNotExist:
-            logger.warning(f"Recovery code login attempt for non-existent user: {email}")
+            logger.warning("Recovery code login attempt for non-existent user", extra_data={'email': email})
             messages.error(request, 'Invalid email or recovery code.')
 
     return render(request, 'accounts/recovery_login.html')

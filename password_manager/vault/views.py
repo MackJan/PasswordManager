@@ -4,6 +4,7 @@ from .models import VaultItem
 from .encryption_service import EncryptionService, VaultItemProxy
 from .crypto_utils import CryptoError
 from core.logging_utils import get_vault_logger
+from core.middleware import get_client_ip
 import logging
 
 # Get centralized logger
@@ -121,10 +122,8 @@ def _handle_delete_item(request):
 # Create your views here.
 def vault_dashboard(request):
     if not request.user.is_authenticated:
-        logger.warning(f"Unauthorized vault access attempt from IP: {request.META.get('REMOTE_ADDR')}")
+        logger.warning(f"Unauthorized vault access attempt from IP: {get_client_ip(request)}")
         return redirect('/login')
-
-    logger.user_activity(f"user_activity: {request.user.email}",request.user)
 
     if request.method == "POST":
         action = request.POST.get('action', 'create')

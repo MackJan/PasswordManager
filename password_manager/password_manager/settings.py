@@ -190,8 +190,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'json': {
-            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "module": "%(module)s", "message": "%(message)s", "user_id": "%(user_id)s", "ip": "%(ip)s"}',
-            'datefmt': '%Y-%m-%dT%H:%M:%S%z'
+            '()': 'core.logging_formatters.StructuredJSONFormatter',
         },
         'verbose': {
             'format': '{levelname} {asctime} {name} {module} {process:d} {thread:d} {message}',
