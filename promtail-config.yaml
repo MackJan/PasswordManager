@@ -18,7 +18,7 @@ scrape_configs:
           job: django
           log_type: authentication
           __path__: /var/log/django/authentication.log
-    pipeline_stages:
+    pipeline_stages: &django_structured_pipeline
       - json:
           expressions:
             timestamp: timestamp
@@ -27,16 +27,26 @@ scrape_configs:
             module: module
             message: message
             user_id: user_id
+            user_email: user_email
             ip: ip
+            path: path
+            http_method: http_method
+            status_code: status_code
+            context_user_pk: context_user_pk
+            context_account_id: context_account_id
       - timestamp:
           source: timestamp
-          format: "2006-01-02T15:04:05-0700"
+          format: RFC3339Nano
       - labels:
           level:
           logger:
           module:
           user_id:
           ip:
+          http_method:
+          status_code:
+      - output:
+          source: message
 
   # Django Vault Logs
   - job_name: django-vault
@@ -47,25 +57,7 @@ scrape_configs:
           job: django
           log_type: vault
           __path__: /var/log/django/vault.log
-    pipeline_stages:
-      - json:
-          expressions:
-            timestamp: timestamp
-            level: level
-            logger: logger
-            module: module
-            message: message
-            user_id: user_id
-            ip: ip
-      - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05-0700"
-      - labels:
-          level:
-          logger:
-          module:
-          user_id:
-          ip:
+    pipeline_stages: *django_structured_pipeline
 
   # Django Security Logs
   - job_name: django-security
@@ -76,25 +68,7 @@ scrape_configs:
           job: django
           log_type: security
           __path__: /var/log/django/security.log
-    pipeline_stages:
-      - json:
-          expressions:
-            timestamp: timestamp
-            level: level
-            logger: logger
-            module: module
-            message: message
-            user_id: user_id
-            ip: ip
-      - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05-0700"
-      - labels:
-          level:
-          logger:
-          module:
-          user_id:
-          ip:
+    pipeline_stages: *django_structured_pipeline
 
   # Django Alerts Logs
   - job_name: django-alerts
@@ -105,25 +79,7 @@ scrape_configs:
           job: django
           log_type: alerts
           __path__: /var/log/django/alerts.log
-    pipeline_stages:
-      - json:
-          expressions:
-            timestamp: timestamp
-            level: level
-            logger: logger
-            module: module
-            message: message
-            user_id: user_id
-            ip: ip
-      - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05-0700"
-      - labels:
-          level:
-          logger:
-          module:
-          user_id:
-          ip:
+    pipeline_stages: *django_structured_pipeline
 
   # Django Application Logs
   - job_name: django-application
@@ -134,25 +90,7 @@ scrape_configs:
           job: django
           log_type: application
           __path__: /var/log/django/application.log
-    pipeline_stages:
-      - json:
-          expressions:
-            timestamp: timestamp
-            level: level
-            logger: logger
-            module: module
-            message: message
-            user_id: user_id
-            ip: ip
-      - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05-0700"
-      - labels:
-          level:
-          logger:
-          module:
-          user_id:
-          ip:
+    pipeline_stages: *django_structured_pipeline
 
   # Django Framework Logs
   - job_name: django-framework
@@ -163,25 +101,7 @@ scrape_configs:
           job: django
           log_type: framework
           __path__: /var/log/django/django.log
-    pipeline_stages:
-      - json:
-          expressions:
-            timestamp: timestamp
-            level: level
-            logger: logger
-            module: module
-            message: message
-            user_id: user_id
-            ip: ip
-      - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05-0700"
-      - labels:
-          level:
-          logger:
-          module:
-          user_id:
-          ip:
+    pipeline_stages: *django_structured_pipeline
 
   # Fallback for any other Django logs
   - job_name: django-catchall
@@ -192,22 +112,4 @@ scrape_configs:
           job: django
           log_type: other
           __path__: /var/log/django/*.log
-    pipeline_stages:
-      - json:
-          expressions:
-            timestamp: timestamp
-            level: level
-            logger: logger
-            module: module
-            message: message
-            user_id: user_id
-            ip: ip
-      - timestamp:
-          source: timestamp
-          format: "2006-01-02T15:04:05-0700"
-      - labels:
-          level:
-          logger:
-          module:
-          user_id:
-          ip:
+    pipeline_stages: *django_structured_pipeline
