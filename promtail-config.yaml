@@ -45,8 +45,6 @@ scrape_configs:
           ip:
           http_method:
           status_code:
-      - output:
-          source: message
 
   # Django Vault Logs
   - job_name: django-vault
