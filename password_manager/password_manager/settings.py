@@ -190,11 +190,12 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'json': {
-            'format': '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "module": "%(module)s", "message": "%(message)s", "user_id": "%(user_id)s", "ip": "%(ip)s"}',
-            'datefmt': '%Y-%m-%dT%H:%M:%S%z'
+            '()': 'core.logging_formatters.JSONLogFormatter',
+            'datefmt': '%Y-%m-%dT%H:%M:%S%z',
         },
         'verbose': {
-            'format': '{levelname} {asctime} {name} {module} {process:d} {thread:d} {message}',
+            'format': '{levelname} {asctime} {name} {module} {process:d} {thread:d} {message} '
+                      '[request_id={request_id} user_id={user_id} ip={ip}]',
             'style': '{',
         },
         'simple': {
@@ -203,8 +204,8 @@ LOGGING = {
         },
     },
     'filters': {
-        'add_user_id': {
-            '()': 'core.middleware.UserIdFilter',
+        'request_context': {
+            '()': 'core.middleware.RequestContextFilter',
         },
     },
     'handlers': {
@@ -216,7 +217,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
-            'filters': ['add_user_id'],
+            'filters': ['request_context'],
         },
         # Authentication and user management logs
         'auth_file': {
@@ -226,7 +227,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
-            'filters': ['add_user_id'],
+            'filters': ['request_context'],
         },
         # Vault and encryption specific logs
         'vault_file': {
@@ -236,7 +237,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
-            'filters': ['add_user_id'],
+            'filters': ['request_context'],
         },
         # Security events and warnings
         'security_file': {
@@ -246,7 +247,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
-            'filters': ['add_user_id'],
+            'filters': ['request_context'],
         },
         # Critical errors and alerts
         'alerts_file': {
@@ -256,7 +257,7 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
-            'filters': ['add_user_id'],
+            'filters': ['request_context'],
         },
         # Django framework logs
         'django_file': {
@@ -266,12 +267,13 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 10,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
-            'filters': ['add_user_id'],
+            'filters': ['request_context'],
         },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
+            'filters': ['request_context'],
         },
     },
     'loggers': {

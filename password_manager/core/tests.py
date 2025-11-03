@@ -2,14 +2,16 @@ from types import SimpleNamespace
 import logging
 from unittest.mock import MagicMock, patch
 
+from django.http import HttpResponse
 from django.test import RequestFactory, SimpleTestCase
 
 from core.logging_utils import AppLogger
 from core.middleware import (
     LoggingMiddleware,
-    UserIdFilter,
-    _request_data,
+    RequestContextFilter,
+    _request_context,
     get_client_ip,
+    get_request_context,
 )
 from core import views as core_views
 
@@ -68,44 +70,62 @@ class MiddlewareTests(SimpleTestCase):
         request = SimpleNamespace(META={'REMOTE_ADDR': '198.51.100.5'})
         self.assertEqual(get_client_ip(request), '198.51.100.5')
 
-    def test_user_id_filter_adds_thread_local_information(self):
-        _request_data.user_id = '42'
-        _request_data.ip_address = '192.0.2.55'
+    def test_get_client_ip_skips_unknown_entries(self):
+        request = SimpleNamespace(
+            META={'HTTP_X_FORWARDED_FOR': 'unknown, 203.0.113.1', 'REMOTE_ADDR': '198.51.100.5'}
+        )
+        self.assertEqual(get_client_ip(request), '203.0.113.1')
+
+    def test_request_context_filter_adds_context_information(self):
+        token = _request_context.set(
+            {
+                'user_id': '42',
+                'ip': '192.0.2.55',
+                'request_id': 'req-1',
+                'method': 'GET',
+                'path': '/test/',
+            }
+        )
         try:
             record = logging.LogRecord('test', logging.INFO, __file__, 10, 'msg', (), None)
-            UserIdFilter().filter(record)
+            RequestContextFilter().filter(record)
             self.assertEqual(record.user_id, '42')
             self.assertEqual(record.ip, '192.0.2.55')
+            self.assertEqual(record.request_id, 'req-1')
+            self.assertEqual(record.http_method, 'GET')
+            self.assertEqual(record.path, '/test/')
         finally:
-            if hasattr(_request_data, 'user_id'):
-                delattr(_request_data, 'user_id')
-            if hasattr(_request_data, 'ip_address'):
-                delattr(_request_data, 'ip_address')
+            _request_context.reset(token)
 
-    def test_logging_middleware_populates_and_cleans_thread_local(self):
+    def test_logging_middleware_populates_and_cleans_context(self):
         class AuthenticatedUser:
             is_authenticated = True
             id = 7
 
-        class DummyRequest:
-            META = {'REMOTE_ADDR': '198.51.100.7'}
-            user = AuthenticatedUser()
+        factory = RequestFactory()
+        request = factory.get('/vault/', HTTP_X_FORWARDED_FOR='198.51.100.7')
+        request.user = AuthenticatedUser()
 
         captured_state = {}
 
         def get_response(request):
-            captured_state['user_id'] = getattr(_request_data, 'user_id', None)
-            captured_state['ip'] = getattr(_request_data, 'ip_address', None)
-            return 'response'
+            captured_state['context'] = get_request_context().copy()
+            return HttpResponse('ok')
 
         middleware = LoggingMiddleware(get_response)
-        response = middleware(DummyRequest())
+        response = middleware(request)
 
-        self.assertEqual(response, 'response')
-        self.assertEqual(captured_state['user_id'], '7')
-        self.assertEqual(captured_state['ip'], '198.51.100.7')
-        self.assertFalse(hasattr(_request_data, 'user_id'))
-        self.assertFalse(hasattr(_request_data, 'ip_address'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('X-Request-ID', response.headers)
+        self.assertTrue(hasattr(request, 'request_id'))
+        self.assertEqual(request.request_id, response.headers['X-Request-ID'])
+        self.assertTrue(captured_state['context'])
+        self.assertEqual(captured_state['context']['request_id'], response.headers['X-Request-ID'])
+        self.assertEqual(captured_state['context']['user_id'], '7')
+        self.assertEqual(captured_state['context']['ip'], '198.51.100.7')
+        self.assertEqual(captured_state['context']['method'], 'GET')
+        self.assertEqual(captured_state['context']['path'], '/vault/')
+        self.assertEqual(get_request_context(), {})
 
 
 class CoreViewTests(SimpleTestCase):
