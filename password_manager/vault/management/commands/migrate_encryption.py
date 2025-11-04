@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from vault.models import VaultItem
 from vault.encryption_service import EncryptionService
-from vault.crypto_utils import CryptoError
+from vault.exceptions import CryptoError
 from accounts.models import UserKeystore
 
 User = get_user_model()

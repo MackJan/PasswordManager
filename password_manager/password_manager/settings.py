@@ -13,6 +13,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,7 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY")
+SECRET_KEY = os.environ.get("SECRET_KEY") or "local-development-secret"
 DEBUG = False
 
 ALLOWED_HOSTS = [
@@ -136,10 +143,22 @@ PASSWORD_HASHERS = [
 
 AUTH_USER_MODEL = "accounts.CustomUser"
 
-# Application Master Key (AMK) configuration
-# In production, set AMK_V1 environment variable to a base64-encoded 32-byte key
-# For development, a default will be generated (NOT SECURE for production)
-AMK_V1 = os.environ.get('AMK_V1')  # Should be base64-encoded 32-byte key
+# KMS / encryption configuration
+VAULT_KMS_KEY_ALIAS = os.environ.get('VAULT_KMS_KEY_ALIAS', 'local/dev')
+VAULT_KMS_REGION = os.environ.get('VAULT_KMS_REGION')
+VAULT_KMS_ENDPOINT = os.environ.get('VAULT_KMS_ENDPOINT')
+VAULT_KMS_ALLOW_SOFTWARE_FALLBACK = _env_bool(
+    'VAULT_KMS_ALLOW_SOFTWARE_FALLBACK',
+    default=VAULT_KMS_KEY_ALIAS.startswith('local/'),
+)
+VAULT_KMS_DEV_KEY = os.environ.get('VAULT_KMS_DEV_KEY')
+VAULT_AMK_VERSION = int(os.environ.get('VAULT_AMK_VERSION', '1'))
+
+AUDIT_HMAC_KEY = os.environ.get('AUDIT_HMAC_KEY')
+AUDIT_LOG_PATH = os.environ.get('AUDIT_LOG_PATH')
+
+VAULT_DECRYPT_RATE_THRESHOLD = int(os.environ.get('VAULT_DECRYPT_RATE_THRESHOLD', '120'))
+VAULT_DECRYPT_RATE_WINDOW = int(os.environ.get('VAULT_DECRYPT_RATE_WINDOW', '60'))
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

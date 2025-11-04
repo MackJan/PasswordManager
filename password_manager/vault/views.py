@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import VaultItem
 from .encryption_service import EncryptionService, VaultItemProxy
-from .crypto_utils import CryptoError
+from vault.exceptions import CryptoError
 from core.logging_utils import get_vault_logger
 from core.middleware import get_client_ip
 import logging

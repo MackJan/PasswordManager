@@ -13,6 +13,7 @@ class VaultItem(models.Model):
     ciphertext_b64 = models.TextField(blank=True,default='')  # AEAD(DEK, item_json, aad={user_id,item_id,ver})
     item_nonce_b64 = models.CharField(max_length=64, blank=True,default='')
     algo_version = models.SmallIntegerField(default=1)
+    dek_rotation_required = models.BooleanField(default=False)
 
     # Optional display name (keep minimal/empty for full encryption)
     display_name = models.CharField(max_length=200, blank=True)

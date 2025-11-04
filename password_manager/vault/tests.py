@@ -14,7 +14,7 @@ from django.test import RequestFactory, SimpleTestCase, TestCase
 
 from vault import crypto_utils
 from vault.crypto_utils import (
-    CryptoError,
+    UMKWrapResult,
     create_aad,
     decrypt_item_data,
     encrypt_item_data,
@@ -23,6 +23,8 @@ from vault.crypto_utils import (
     wrap_dek,
     wrap_umk,
 )
+from vault.exceptions import CryptoError
+from vault.kms_service import SoftwareKMSService
 from vault.encryption_service import EncryptionService, VaultItemProxy
 from vault import views as vault_views
 from vault.fields import EncryptedField, EncryptedKeyField, SECRET_KEY
@@ -57,27 +59,15 @@ class VaultUtilsTests(SimpleTestCase):
         self.assertIsNone(decrypt_data('', self.secret_key))
 
 
-class DummyAMKManager:
-    def __init__(self, key):
-        self._key = key
-
-    def get_latest_version(self):
-        return 1
-
-    def get_amk(self, version):
-        if version != 1:
-            raise CryptoError('AMK version not found')
-        return self._key
-
-
 class CryptoUtilsTests(SimpleTestCase):
     def setUp(self):
-        self.original_manager = crypto_utils.amk_manager
         self.test_key = bytes(range(32))
-        crypto_utils.amk_manager = DummyAMKManager(self.test_key)
+        self.software_kms = SoftwareKMSService(key_material=self.test_key)
+        self.kms_patch = patch('vault.crypto_utils.get_kms_service', return_value=self.software_kms)
+        self.kms_patch.start()
 
     def tearDown(self):
-        crypto_utils.amk_manager = self.original_manager
+        self.kms_patch.stop()
 
     def test_create_aad_contains_sorted_fields(self):
         aad_bytes = create_aad(user_id=5, item_id='abc', algo_version=2, amk_version=7)
@@ -86,9 +76,15 @@ class CryptoUtilsTests(SimpleTestCase):
 
     def test_wrap_and_unwrap_umk_round_trip(self):
         umk = b'\x01' * 32
-        wrapped, nonce, version = wrap_umk(umk, user_id=9)
-        self.assertEqual(version, 1)
-        unwrapped = unwrap_umk(wrapped, nonce, user_id=9, amk_version=version)
+        wrap_result = wrap_umk(umk, user_id=9)
+        self.assertIsInstance(wrap_result, UMKWrapResult)
+        self.assertEqual(wrap_result.amk_version, 1)
+        unwrapped = unwrap_umk(
+            wrap_result.wrapped_umk_b64,
+            encryption_context=wrap_result.encryption_context,
+            kms_key_id=wrap_result.kms_key_id,
+            kms_encryption_algorithm=wrap_result.kms_encryption_algorithm,
+        )
         self.assertEqual(unwrapped, umk)
 
     def test_wrap_and_unwrap_dek_round_trip(self):
@@ -174,6 +170,7 @@ class EncryptionServiceTests(TestCase):
         self.assertEqual(vault_item.ciphertext_b64, 'ciphertext')
         self.assertEqual(vault_item.item_nonce_b64, 'itemnonce')
         self.assertEqual(vault_item.display_name, 'Example Vault Item')
+        self.assertFalse(vault_item.dek_rotation_required)
 
         mock_wrap_dek.assert_called_once_with(b'd' * 32, b'u' * 32, str(vault_item.id))
         mock_encrypt_item_data.assert_called_once_with(item_data, b'd' * 32, self.user.id, str(vault_item.id))
@@ -234,8 +231,12 @@ class EncryptionServiceTests(TestCase):
         result = EncryptionService._attempt_legacy_decryption(self.user, item, b'u' * 32)
 
         self.assertEqual(result, {'name': 'Decrypted'})
-        mock_unwrap_dek.assert_called_once_with('wrapped', 'nonce', b'u' * 32, str(item.id), item.algo_version)
-        mock_decrypt_item_data.assert_called_once_with('cipher', 'itemnonce', b'd' * 32, self.user.id, str(item.id), item.algo_version)
+        mock_unwrap_dek.assert_called_once_with(
+            'wrapped', 'nonce', b'u' * 32, str(item.id), algo_version=item.algo_version
+        )
+        mock_decrypt_item_data.assert_called_once_with(
+            'cipher', 'itemnonce', b'd' * 32, self.user.id, str(item.id), algo_version=item.algo_version
+        )
         mock_secure_zero.assert_called_once_with(b'd' * 32)
 
     def test_get_vault_items_metadata_includes_fallback_name(self):

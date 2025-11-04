@@ -4,7 +4,7 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.http import HttpRequest
 from vault.encryption_service import EncryptionService
-from vault.crypto_utils import CryptoError
+from vault.exceptions import CryptoError
 from core.logging_utils import get_accounts_logger
 from core.middleware import get_client_ip
 from typing import Optional
