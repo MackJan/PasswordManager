@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = 'Fix recovery codes authenticators that are missing the seed key'
 
     def handle(self, *args, **options):
-        # Find all recovery codes authenticators that don't have a 'seed' key
+        # Find all recovery codes authenticators that don't have a 'seed' key or 'used_mask' key
         recovery_auths = Authenticator.objects.filter(
             type=Authenticator.Type.RECOVERY_CODES
         )
@@ -15,10 +15,21 @@ class Command(BaseCommand):
         fixed_count = 0
 
         for auth in recovery_auths:
+            needs_fix = False
+
+            # Add seed if missing
             if 'seed' not in auth.data:
-                # Generate a seed for this authenticator
                 seed = secrets.token_bytes(32)
                 auth.data['seed'] = seed.hex()
+                needs_fix = True
+
+            # Add or fix used_mask if missing or wrong type
+            if 'used_mask' not in auth.data or not isinstance(auth.data.get('used_mask'), int):
+                # Initialize as 0 (bitfield where all codes are unused)
+                auth.data['used_mask'] = 0
+                needs_fix = True
+
+            if needs_fix:
                 auth.save()
                 fixed_count += 1
                 self.stdout.write(

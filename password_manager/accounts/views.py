@@ -61,7 +61,8 @@ def get_recovery_codes_data(codes):
     
     return {
         'seed': seed.hex(),  # This is what allauth expects
-        'unused_codes': codes  # Keep this for compatibility with existing views
+        'unused_codes': codes,  # Keep this for compatibility with existing views
+        'used_mask': 0  # Bitfield to track which codes have been used (0 = all unused)
     }
 
 @require_http_methods(["GET"])
@@ -263,8 +264,6 @@ def recovery_code_login(request):
                 recovery_auth.data['unused_codes'] = unused_codes
                 recovery_auth.save()
 
-                # Log the user in
-                from django.contrib.auth import login
                 login(request, user, backend="allauth.account.auth_backends.AuthenticationBackend")
 
                 logger.info("Authenticated using recovery code", user=user)

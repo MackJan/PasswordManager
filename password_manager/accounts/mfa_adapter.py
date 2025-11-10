@@ -112,5 +112,6 @@ class CustomMFAAdapter(DefaultMFAAdapter):
 
         return {
             'seed': seed.hex(),  # This is what allauth expects
-            'unused_codes': codes  # Keep this for compatibility with existing views
+            'unused_codes': codes,  # Keep this for compatibility with existing views
+            'used_mask': 0  # Bitfield to track which codes have been used (0 = all unused)
         }
