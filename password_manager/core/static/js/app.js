@@ -251,7 +251,7 @@
 
   document.querySelectorAll('[data-format="recovery"]').forEach((input) => {
     input.addEventListener('input', () => {
-      const raw = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+      const raw = input.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 8);
       if (raw.length > 4) {
         input.value = `${raw.slice(0, 4)}-${raw.slice(4)}`;
       } else {
