@@ -199,11 +199,13 @@
         return;
       }
       const source = document.getElementById(targetId);
-      const text = source?.innerText?.trim();
+      let text = source?.innerText?.trim();
       if (!text) {
         showToast('Nothing to download yet.', 'error');
         return;
       }
+      // Replace escaped newlines with actual newlines
+      text = text.replace(/\\n/g, '\n');
       const blob = new Blob([text], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
