@@ -3,13 +3,14 @@ Encryption service layer for password manager.
 Handles registration, login, and vault encryption workflows.
 """
 
+import base64
 from typing import Dict
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from accounts.models import UserKeystore
 from vault.models import VaultItem
 from vault.crypto_utils import (
-    generate_key, wrap_umk, unwrap_umk, wrap_dek, unwrap_dek,
+    generate_key, generate_salt, wrap_umk, unwrap_umk, wrap_dek, unwrap_dek,
     encrypt_item_data, decrypt_item_data, secure_zero, CryptoError
 )
 from core.logging_utils import get_vault_logger
@@ -152,12 +153,16 @@ class EncryptionService:
             logger.info(f"Generated DEK for user {user.id}", user)
 
             # Create vault item to get ID
+            item_salt = generate_salt()
+            item_salt_b64 = base64.b64encode(item_salt).decode('ascii')
+
             vault_item = VaultItem.objects.create(
                 user=user,
                 wrapped_dek_b64='',  # Will be set below
                 dek_wrap_nonce_b64='',
                 ciphertext_b64='',
                 item_nonce_b64='',
+                item_salt_b64=item_salt_b64,
                 display_name=item_data.get('name', '')[:50] if item_data.get('name') else ''
             )
             logger.info(f"Created vault item {vault_item.id} for user {user.id}", user)
@@ -170,7 +175,7 @@ class EncryptionService:
             # Encrypt item data with DEK
             logger.info(f"Attempting to encrypt item data for vault item {vault_item.id}", user)
             ciphertext_b64, item_nonce_b64 = encrypt_item_data(
-                item_data, dek, user.id, str(vault_item.id)
+                item_data, dek, user.id, str(vault_item.id), item_salt=item_salt
             )
             logger.info(f"Successfully encrypted item data for vault item {vault_item.id}", user)
 
@@ -179,9 +184,10 @@ class EncryptionService:
             vault_item.dek_wrap_nonce_b64 = dek_nonce_b64
             vault_item.ciphertext_b64 = ciphertext_b64
             vault_item.item_nonce_b64 = item_nonce_b64
+            vault_item.item_salt_b64 = item_salt_b64
             vault_item.save(update_fields=[
-                'wrapped_dek_b64', 'dek_wrap_nonce_b64', 
-                'ciphertext_b64', 'item_nonce_b64'
+                'wrapped_dek_b64', 'dek_wrap_nonce_b64',
+                'ciphertext_b64', 'item_nonce_b64', 'item_salt_b64'
             ])
             
             logger.info(f"Successfully created and saved encrypted vault item {vault_item.id} for user {user.id}", user)
@@ -235,6 +241,14 @@ class EncryptionService:
             # Get the algorithm version, defaulting to 1 if not set
             algo_version = getattr(vault_item, 'algo_version', 1)
 
+            # Prepare optional item salt
+            item_salt = None
+            if getattr(vault_item, 'item_salt_b64', ''):
+                try:
+                    item_salt = base64.b64decode(vault_item.item_salt_b64)
+                except (ValueError, TypeError) as exc:
+                    raise CryptoError(f"Invalid item salt for vault item {vault_item.id}: {exc}")
+
             # Unwrap DEK
             dek = unwrap_dek(
                 vault_item.wrapped_dek_b64,
@@ -243,7 +257,7 @@ class EncryptionService:
                 str(vault_item.id),
                 algo_version
             )
-            
+
             # Decrypt item data
             item_data = decrypt_item_data(
                 vault_item.ciphertext_b64,
@@ -251,7 +265,8 @@ class EncryptionService:
                 dek,
                 user.id,
                 str(vault_item.id),
-                algo_version
+                algo_version,
+                item_salt=item_salt
             )
             
             return item_data
@@ -308,13 +323,21 @@ class EncryptionService:
             )
 
             # Try decrypting with the standard pattern
+            item_salt = None
+            if getattr(vault_item, 'item_salt_b64', ''):
+                try:
+                    item_salt = base64.b64decode(vault_item.item_salt_b64)
+                except (ValueError, TypeError):
+                    item_salt = None
+
             item_data = decrypt_item_data(
                 vault_item.ciphertext_b64,
                 vault_item.item_nonce_b64,
                 dek,
                 user.id,
                 str(vault_item.id),
-                algo_version
+                algo_version,
+                item_salt=item_salt
             )
 
             return item_data
@@ -350,13 +373,17 @@ class EncryptionService:
             
             # Generate new Data Encryption Key for security
             dek = generate_key()
-            
+
             # Wrap new DEK with UMK
             wrapped_dek_b64, dek_nonce_b64 = wrap_dek(dek, umk, str(vault_item.id))
-            
+
+            # Refresh item salt to harden ciphertext uniqueness
+            item_salt = generate_salt()
+            item_salt_b64 = base64.b64encode(item_salt).decode('ascii')
+
             # Encrypt new item data with new DEK
             ciphertext_b64, item_nonce_b64 = encrypt_item_data(
-                item_data, dek, user.id, str(vault_item.id)
+                item_data, dek, user.id, str(vault_item.id), item_salt=item_salt
             )
             
             # Update vault item
@@ -364,6 +391,7 @@ class EncryptionService:
             vault_item.dek_wrap_nonce_b64 = dek_nonce_b64
             vault_item.ciphertext_b64 = ciphertext_b64
             vault_item.item_nonce_b64 = item_nonce_b64
+            vault_item.item_salt_b64 = item_salt_b64
             vault_item.display_name = item_data.get('name', '')[:50] if item_data.get('name') else ''
             vault_item.save()
             
