@@ -13,14 +13,18 @@ The system relies on a three-tier hierarchy of symmetric keys implemented in
   `AMKManager`. It is persisted either in the `.keys/amk.key` file on disk or
   supplied through the `AMK_V1` environment variable for production
   deployments. The manager also supports AMK rotation and caches keys in memory
-  for reuse.【F:password_manager/vault/crypto_utils.py†L20-L116】
+  for reuse.【F:password_manager/vault/crypto_utils.py†L25-L142】
 - **User Master Key (UMK)** – A per-user 32-byte key generated during account
   provisioning. The UMK is wrapped (encrypted) with the AMK using AES-256-GCM
   before being stored in the `accounts_userkeystore` table alongside the
-  associated nonce and AMK version metadata.【F:password_manager/vault/encryption_service.py†L22-L70】【F:password_manager/accounts/models.py†L40-L67】
+  associated nonce and AMK version metadata.【F:password_manager/vault/encryption_service.py†L25-L74】【F:password_manager/accounts/models.py†L46-L65】
 - **Data Encryption Key (DEK)** – A unique 32-byte key generated each time a
   vault item is created or updated. The DEK encrypts the actual vault item
-  payload and is itself wrapped with the owning user’s UMK.【F:password_manager/vault/encryption_service.py†L101-L199】
+  payload and is itself wrapped with the owning user’s UMK.【F:password_manager/vault/encryption_service.py†L151-L398】
+- **Vault Item Salt** – A random 16-byte value generated when an item is
+  created or refreshed. The salt is stored as Base64 in the `item_salt_b64`
+  column and feeds an HKDF that deterministically derives the per-item AEAD
+  key from the DEK, ensuring unique ciphertexts even when data repeats.【F:password_manager/vault/crypto_utils.py†L158-L404】【F:password_manager/vault/encryption_service.py†L155-L398】【F:password_manager/vault/models.py†L10-L22】
 
 All key material is represented as raw bytes in memory and encoded with Base64
 when persisted.
@@ -32,22 +36,28 @@ through the `cryptography` library’s `AESGCM` implementation. Helper functions
 `aead_encrypt` and `aead_decrypt` enforce 32-byte keys, generate 12-byte
 nonces, and attach Additional Authenticated Data (AAD) constructed from stable
 identifiers such as user IDs, item IDs, algorithm versions, and AMK
-versions.【F:password_manager/vault/crypto_utils.py†L118-L215】
+versions.【F:password_manager/vault/crypto_utils.py†L181-L263】
+
+Each vault item’s DEK is combined with its stored salt using an HKDF-SHA256
+derivation to produce the actual AEAD key that encrypts the payload. The
+`derive_item_key` helper and the `encrypt_item_data`/`decrypt_item_data`
+wrappers ensure this derivation happens symmetrically during encryption and
+decryption while preserving legacy compatibility for unsalted items.【F:password_manager/vault/crypto_utils.py†L165-L438】
 
 AAD is produced by `create_aad`, which serializes a deterministic JSON object
 containing the relevant identifiers. The values included depend on the type of
 operation:
 
 - UMK wrapping/unwrapping includes the user ID, the algorithm version, and the
-  AMK version.【F:password_manager/vault/crypto_utils.py†L177-L205】
+  AMK version.【F:password_manager/vault/crypto_utils.py†L265-L316】
 - DEK wrapping/unwrapping includes a sentinel user ID (`0`), the item UUID, and
-  the algorithm version.【F:password_manager/vault/crypto_utils.py†L207-L249】
+  the algorithm version.【F:password_manager/vault/crypto_utils.py†L319-L366】
 - Vault item payload encryption includes the real user ID, the item UUID, and
-  the algorithm version.【F:password_manager/vault/crypto_utils.py†L251-L307】
+  the algorithm version.【F:password_manager/vault/crypto_utils.py†L369-L438】
 
 If authentication fails during decryption, `CryptoError` is raised, and detailed
 logs capture the failure context. A best-effort `secure_zero` helper attempts to
-scrub sensitive keys from memory when workflows finish.【F:password_manager/vault/crypto_utils.py†L216-L403】
+scrub sensitive keys from memory when workflows finish.【F:password_manager/vault/crypto_utils.py†L219-L233】【F:password_manager/vault/crypto_utils.py†L445-L471】
 
 ## User Encryption Provisioning
 
@@ -56,7 +66,7 @@ When a new account is created, the custom allauth adapter triggers
 exists for the user, generates a UMK, wraps it with the latest AMK, and stores
 all metadata atomically. Existing keystores are updated in place during
 rotation. Failures raise `CryptoError` and are logged as encryption events for
-monitoring.【F:password_manager/accounts/adapter.py†L6-L44】【F:password_manager/vault/encryption_service.py†L22-L80】
+monitoring.【F:password_manager/accounts/adapter.py†L6-L44】【F:password_manager/vault/encryption_service.py†L25-L74】
 
 ## Vault Item Encryption Workflow
 
@@ -66,22 +76,24 @@ handling:
 1. **Item creation**
    1. Confirm that the user keystore exists (setting it up if necessary).
    2. Unwrap the UMK from the keystore using the stored AMK version.
-   3. Generate a fresh DEK and persist a placeholder vault record to obtain the
-      item UUID.
+   3. Generate a fresh DEK, mint a per-item salt, and persist a placeholder
+      vault record to obtain the item UUID and store the salt.
    4. Wrap the DEK with the UMK using AES-256-GCM and the item UUID as part of
       the AAD.
-   5. Serialize the item payload to canonical JSON, encrypt it with the DEK, and
-      store ciphertext and nonce as Base64.
-   6. Securely zero the UMK and DEK buffers before returning.【F:password_manager/vault/encryption_service.py†L90-L199】
+   5. Serialize the item payload to canonical JSON, derive an AEAD key from the
+      DEK and salt via HKDF, encrypt the payload, and store ciphertext, salt,
+      and nonce as Base64.
+   6. Securely zero the UMK and DEK buffers before returning.【F:password_manager/vault/encryption_service.py†L141-L207】
 2. **Item decryption**
    1. Unwrap the UMK using the stored AMK metadata.
-   2. Unwrap the DEK with the UMK.
-   3. Decrypt the payload with AES-256-GCM and deserialize the JSON back into a
-      Python dictionary.
+   2. Decode the stored salt and unwrap the DEK with the UMK.
+   3. Re-derive the item AEAD key via HKDF and decrypt the payload with
+      AES-256-GCM, then deserialize the JSON back into a Python dictionary.
    4. Attempt legacy AAD permutations if decryption fails (to ease migration),
-      then scrub key material from memory.【F:password_manager/vault/encryption_service.py†L200-L290】
-3. **Item updates** generate a new DEK, re-wrap it, and re-encrypt the payload
-   to provide forward secrecy for edited secrets.【F:password_manager/vault/encryption_service.py†L291-L343】
+      then scrub key material from memory.【F:password_manager/vault/encryption_service.py†L210-L292】
+3. **Item updates** generate a new DEK, mint a fresh salt, re-wrap the DEK, and
+   re-encrypt the payload to provide forward secrecy for edited
+   secrets.【F:password_manager/vault/encryption_service.py†L364-L405】
 
 ## Legacy Encryption Artifacts
 
@@ -108,21 +120,22 @@ sequenceDiagram
 
     User->>AMK: Unwrap UMK using AMK metadata
     User->>User: Generate DEK (32 bytes)
-    User->>Vault: Create placeholder item (obtain UUID)
+    User->>Vault: Create placeholder item (obtain UUID & store salt)
+    User->>User: Derive item AEAD key via HKDF(DEK, salt)
     User->>User: Wrap DEK with UMK (AAD={item_uuid,algo_ver})
-    User->>User: Encrypt item JSON with DEK (AAD={user,item_uuid,algo_ver})
-    User->>DB: Persist wrapped DEK, ciphertext, nonces
+    User->>User: Encrypt item JSON with derived key (AAD={user,item_uuid,algo_ver})
+    User->>DB: Persist wrapped DEK, ciphertext, salt, nonces
 ```
 
 ## Security Considerations
 
 - **Key storage** – Protect the `.keys/amk.key` file with strict filesystem
   permissions (`0o600`) and back it up securely; losing it prevents UMK
-  recovery.【F:password_manager/vault/crypto_utils.py†L60-L115】
+  recovery.【F:password_manager/vault/crypto_utils.py†L55-L142】
 - **Monitoring** – Dedicated logging channels record successes and failures for
   key operations, helping detect tampering or configuration issues.
 - **Memory hygiene** – While `secure_zero` cannot guarantee complete erasure in
   Python, it limits exposure by overwriting buffers and forcing garbage
-  collection when possible.【F:password_manager/vault/crypto_utils.py†L308-L403】
+  collection when possible.【F:password_manager/vault/crypto_utils.py†L445-L471】
 - **Legacy cleanup** – Remove or rotate data that still depends on the static
   AES-CFB helper to ensure all secrets benefit from authenticated encryption.
