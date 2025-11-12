@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from types import SimpleNamespace
@@ -17,7 +18,9 @@ from vault.crypto_utils import (
     CryptoError,
     create_aad,
     decrypt_item_data,
+    derive_item_key,
     encrypt_item_data,
+    generate_salt,
     unwrap_dek,
     unwrap_umk,
     wrap_dek,
@@ -98,11 +101,32 @@ class CryptoUtilsTests(SimpleTestCase):
         unwrapped = unwrap_dek(wrapped, nonce, umk, item_id='item-123')
         self.assertEqual(unwrapped, dek)
 
+    def test_generate_salt_returns_expected_length(self):
+        salt = generate_salt(24)
+        self.assertEqual(len(salt), 24)
+
+    def test_derive_item_key_requires_salt(self):
+        dek = b'\x04' * 32
+        with self.assertRaises(CryptoError):
+            derive_item_key(dek, b'')
+
     def test_encrypt_and_decrypt_item_data_round_trip(self):
         dek = b'\x04' * 32
         item_data = {'name': 'Example', 'username': 'alice', 'password': 'secret'}
-        ciphertext, nonce = encrypt_item_data(item_data, dek, user_id=11, item_id='item-456')
-        decrypted = decrypt_item_data(ciphertext, nonce, dek, user_id=11, item_id='item-456')
+        salt = b's' * 16
+        ciphertext, nonce = encrypt_item_data(
+            item_data, dek, user_id=11, item_id='item-456', item_salt=salt
+        )
+        decrypted = decrypt_item_data(
+            ciphertext, nonce, dek, user_id=11, item_id='item-456', item_salt=salt
+        )
+        self.assertEqual(decrypted, item_data)
+
+    def test_encrypt_and_decrypt_item_data_without_salt_for_legacy_support(self):
+        dek = b'\x04' * 32
+        item_data = {'name': 'Example'}
+        ciphertext, nonce = encrypt_item_data(item_data, dek, user_id=99, item_id='item-legacy')
+        decrypted = decrypt_item_data(ciphertext, nonce, dek, user_id=99, item_id='item-legacy')
         self.assertEqual(decrypted, item_data)
 
     def test_aead_encrypt_requires_expected_key_length(self):
@@ -146,6 +170,7 @@ class EncryptionServiceTests(TestCase):
     @patch('vault.encryption_service.secure_zero')
     @patch('vault.encryption_service.encrypt_item_data', return_value=('ciphertext', 'itemnonce'))
     @patch('vault.encryption_service.wrap_dek', return_value=('wrapped', 'deknonce'))
+    @patch('vault.encryption_service.generate_salt', return_value=b's' * 16)
     @patch('vault.encryption_service.generate_key', return_value=b'd' * 32)
     @patch.object(EncryptionService, '_get_user_master_key', return_value=b'u' * 32)
     @patch.object(EncryptionService, 'setup_user_encryption')
@@ -154,6 +179,7 @@ class EncryptionServiceTests(TestCase):
         mock_setup_encryption,
         mock_get_umk,
         mock_generate_key,
+        mock_generate_salt,
         mock_wrap_dek,
         mock_encrypt_item_data,
         mock_secure_zero,
@@ -175,9 +201,14 @@ class EncryptionServiceTests(TestCase):
         self.assertEqual(vault_item.item_nonce_b64, 'itemnonce')
         self.assertEqual(vault_item.display_name, 'Example Vault Item')
 
+        mock_generate_salt.assert_called_once()
         mock_wrap_dek.assert_called_once_with(b'd' * 32, b'u' * 32, str(vault_item.id))
-        mock_encrypt_item_data.assert_called_once_with(item_data, b'd' * 32, self.user.id, str(vault_item.id))
+        mock_encrypt_item_data.assert_called_once_with(
+            item_data, b'd' * 32, self.user.id, str(vault_item.id), item_salt=b's' * 16
+        )
         mock_secure_zero.assert_has_calls([call(b'u' * 32), call(b'd' * 32)])
+        expected_salt_b64 = base64.b64encode(b's' * 16).decode('ascii')
+        self.assertEqual(vault_item.item_salt_b64, expected_salt_b64)
 
     def test_decrypt_vault_item_returns_placeholder_for_legacy_items(self):
         legacy_item = VaultItem.objects.create(user=self.user, display_name='Old item')
@@ -235,7 +266,9 @@ class EncryptionServiceTests(TestCase):
 
         self.assertEqual(result, {'name': 'Decrypted'})
         mock_unwrap_dek.assert_called_once_with('wrapped', 'nonce', b'u' * 32, str(item.id), item.algo_version)
-        mock_decrypt_item_data.assert_called_once_with('cipher', 'itemnonce', b'd' * 32, self.user.id, str(item.id), item.algo_version)
+        mock_decrypt_item_data.assert_called_once_with(
+            'cipher', 'itemnonce', b'd' * 32, self.user.id, str(item.id), item.algo_version, item_salt=None
+        )
         mock_secure_zero.assert_called_once_with(b'd' * 32)
 
     def test_get_vault_items_metadata_includes_fallback_name(self):

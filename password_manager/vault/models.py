@@ -12,6 +12,7 @@ class VaultItem(models.Model):
     dek_wrap_nonce_b64 = models.CharField(max_length=64, blank=True,default='')
     ciphertext_b64 = models.TextField(blank=True,default='')  # AEAD(DEK, item_json, aad={user_id,item_id,ver})
     item_nonce_b64 = models.CharField(max_length=64, blank=True,default='')
+    item_salt_b64 = models.CharField(max_length=64, blank=True, default='')
     algo_version = models.SmallIntegerField(default=1)
 
     # Optional display name (keep minimal/empty for full encryption)

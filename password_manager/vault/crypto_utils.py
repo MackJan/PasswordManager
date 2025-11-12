@@ -8,6 +8,8 @@ import json
 import base64
 from typing import Dict, Any, Tuple, Optional
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidTag
 from django.conf import settings
 from pathlib import Path
@@ -151,6 +153,29 @@ def generate_key() -> bytes:
 def generate_nonce() -> bytes:
     """Generate a cryptographically secure 12-byte nonce for AES-GCM"""
     return os.urandom(12)
+
+
+def generate_salt(length: int = 16) -> bytes:
+    """Generate a cryptographically secure salt for vault item encryption"""
+    if length <= 0:
+        raise CryptoError("Salt length must be positive")
+    return os.urandom(length)
+
+
+def derive_item_key(dek: bytes, item_salt: bytes) -> bytes:
+    """Derive a stable per-item AEAD key from the DEK and item salt"""
+    if len(dek) != 32:
+        raise CryptoError("DEK must be 32 bytes")
+    if not item_salt:
+        raise CryptoError("Item salt is required to derive item key")
+
+    hkdf = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=item_salt,
+        info=b'vault-item-aead-key-v1',
+    )
+    return hkdf.derive(dek)
 
 
 def aead_encrypt(key: bytes, plaintext: bytes, aad: bytes = b'') -> Tuple[bytes, bytes]:
@@ -341,8 +366,14 @@ def unwrap_dek(wrapped_dek_b64: str, nonce_b64: str, umk: bytes, item_id: str, a
     return dek
 
 
-def encrypt_item_data(item_data: Dict[str, Any], dek: bytes, user_id: int, item_id: str, algo_version: int = 1) -> \
-Tuple[str, str]:
+def encrypt_item_data(
+    item_data: Dict[str, Any],
+    dek: bytes,
+    user_id: int,
+    item_id: str,
+    algo_version: int = 1,
+    item_salt: Optional[bytes] = None,
+) -> Tuple[str, str]:
     """
     Encrypt item data using Data Encryption Key
 
@@ -360,7 +391,12 @@ Tuple[str, str]:
     plaintext = item_json.encode('utf-8')
     aad = create_aad(user_id, item_id=item_id, algo_version=algo_version)
 
-    nonce, ciphertext = aead_encrypt(dek, plaintext, aad)
+    if item_salt:
+        key = derive_item_key(dek, item_salt)
+    else:
+        key = dek
+
+    nonce, ciphertext = aead_encrypt(key, plaintext, aad)
 
     return (
         base64.b64encode(ciphertext).decode('ascii'),
@@ -368,8 +404,15 @@ Tuple[str, str]:
     )
 
 
-def decrypt_item_data(ciphertext_b64: str, nonce_b64: str, dek: bytes, user_id: int, item_id: str,
-                      algo_version: int = 1) -> Dict[str, Any]:
+def decrypt_item_data(
+    ciphertext_b64: str,
+    nonce_b64: str,
+    dek: bytes,
+    user_id: int,
+    item_id: str,
+    algo_version: int = 1,
+    item_salt: Optional[bytes] = None,
+) -> Dict[str, Any]:
     """
     Decrypt item data using Data Encryption Key
 
@@ -388,7 +431,12 @@ def decrypt_item_data(ciphertext_b64: str, nonce_b64: str, dek: bytes, user_id: 
     nonce = base64.b64decode(nonce_b64)
     aad = create_aad(user_id, item_id=item_id, algo_version=algo_version)
 
-    plaintext = aead_decrypt(dek, nonce, ciphertext, aad)
+    if item_salt:
+        key = derive_item_key(dek, item_salt)
+    else:
+        key = dek
+
+    plaintext = aead_decrypt(key, nonce, ciphertext, aad)
     item_json = plaintext.decode('utf-8')
 
     return json.loads(item_json)
