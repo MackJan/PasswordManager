@@ -2,6 +2,15 @@ import logging
 import threading
 from ipaddress import ip_address
 
+from django.http import HttpResponse
+
+from core.logging_utils import get_security_logger
+from core.rate_limit import (
+    RateLimitScenario,
+    increment_rate_limit,
+    is_rate_limited,
+)
+
 # Thread-local storage for request data
 _request_data = threading.local()
 
@@ -139,4 +148,151 @@ class LoggingMiddleware:
                 if hasattr(_request_data, attribute):
                     delattr(_request_data, attribute)
 
+        return response
+
+
+class RateLimitMiddleware:
+    """Middleware that throttles sensitive and malicious requests."""
+
+    LOGIN_PATH_PREFIX = "/accounts/login"
+    PASSWORD_RESET_PATH_PREFIX = "/accounts/password/reset"
+    MALICIOUS_PATTERNS = (
+        ".env",
+        "wp-admin",
+        "wp-login.php",
+        "phpmyadmin",
+        "\.git",
+        "etc/passwd",
+        "adminer.php",
+    )
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.logger = get_security_logger()
+
+    def __call__(self, request):
+        client_ip = get_client_ip(request)
+
+        # Always block if the IP is already rate limited for login failures.
+        if self._should_block_login_attempt(request, client_ip):
+            return self._too_many_requests(
+                "Too many failed login attempts. Please try again later.",
+                client_ip,
+            )
+
+        # Block suspicious traffic probing well-known sensitive paths.
+        if self._is_malicious_request(request):
+            result = increment_rate_limit(
+                RateLimitScenario.MALICIOUS_TRAFFIC_IP,
+                client_ip,
+                limit=3,
+                window=900,
+                block=86400,
+            )
+            if not result.allowed:
+                self.logger.security_event(
+                    "Blocked malicious probing after repeated suspicious requests",
+                    extra_data={"ip": client_ip, "retry_after": result.retry_after},
+                )
+                return self._too_many_requests(
+                    "Suspicious activity detected from your IP.",
+                    client_ip,
+                    retry_after=result.retry_after,
+                )
+
+        if request.method == "POST" and request.path.startswith(self.PASSWORD_RESET_PATH_PREFIX):
+            response = self._apply_password_reset_limits(request, client_ip)
+            if response:
+                return response
+
+        return self.get_response(request)
+
+    def _apply_password_reset_limits(self, request, client_ip):
+        result_ip = increment_rate_limit(
+            RateLimitScenario.PASSWORD_RESET_IP,
+            client_ip,
+            limit=3,
+            window=3600,
+            block=14400,
+        )
+        if not result_ip.allowed:
+            self.logger.security_event(
+                "Password reset attempt rate limited by IP",
+                extra_data={"ip": client_ip, "retry_after": result_ip.retry_after},
+            )
+            return self._too_many_requests(
+                "Too many password reset requests. Please try again later.",
+                client_ip,
+                retry_after=result_ip.retry_after,
+            )
+
+        email = (request.POST.get("email") or request.POST.get("login") or "").strip()
+        if email:
+            result_email = increment_rate_limit(
+                RateLimitScenario.PASSWORD_RESET_EMAIL,
+                email,
+                limit=2,
+                window=3600,
+                block=14400,
+            )
+            if not result_email.allowed:
+                self.logger.security_event(
+                    "Password reset attempt rate limited by email",
+                    extra_data={"email": email, "ip": client_ip, "retry_after": result_email.retry_after},
+                )
+                return self._too_many_requests(
+                    "Too many password reset requests for this account.",
+                    email,
+                    retry_after=result_email.retry_after,
+                )
+        return None
+
+    def _should_block_login_attempt(self, request, client_ip):
+        if request.method != "POST":
+            return False
+        if not request.path.startswith(self.LOGIN_PATH_PREFIX):
+            return False
+
+        result_ip = is_rate_limited(RateLimitScenario.LOGIN_IP, client_ip)
+        if not result_ip.allowed:
+            self.logger.security_event(
+                "Login blocked due to IP rate limit",
+                extra_data={"ip": client_ip, "retry_after": result_ip.retry_after},
+            )
+            return True
+
+        identifier = self._extract_login_identifier(request)
+        if identifier:
+            result_email = is_rate_limited(RateLimitScenario.LOGIN_EMAIL, identifier)
+            if not result_email.allowed:
+                self.logger.security_event(
+                    "Login blocked due to account rate limit",
+                    extra_data={
+                        "email": identifier,
+                        "ip": client_ip,
+                        "retry_after": result_email.retry_after,
+                    },
+                )
+                return True
+        return False
+
+    def _is_malicious_request(self, request):
+        path = (getattr(request, "path", "") or "").lower()
+        if not path:
+            return False
+        return any(pattern in path for pattern in self.MALICIOUS_PATTERNS)
+
+    def _extract_login_identifier(self, request):
+        possible_keys = ("login", "email", "username")
+        for key in possible_keys:
+            value = request.POST.get(key)
+            if value:
+                return value.strip().lower()
+        return None
+
+    def _too_many_requests(self, message, identifier, retry_after=None):
+        retry_value = retry_after if retry_after is not None else 0
+        response = HttpResponse(message, status=429)
+        if retry_value:
+            response["Retry-After"] = str(retry_value)
         return response

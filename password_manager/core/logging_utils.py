@@ -5,9 +5,6 @@ Provides consistent logging patterns and helper functions.
 
 import logging
 from typing import Optional, Dict, Any
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
 
 
 class AppLogger:
@@ -24,19 +21,19 @@ class AppLogger:
         self.security_logger = logging.getLogger('django.security')
         self.alerts_logger = logging.getLogger('alerts')
 
-    def info(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
+    def info(self, message: str, user: Optional[Any] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Log an info message."""
         self._log('info', message, user, extra_data)
 
-    def warning(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
+    def warning(self, message: str, user: Optional[Any] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Log a warning message."""
         self._log('warning', message, user, extra_data)
 
-    def error(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
+    def error(self, message: str, user: Optional[Any] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Log an error message."""
         self._log('error', message, user, extra_data)
 
-    def critical(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
+    def critical(self, message: str, user: Optional[Any] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Log a critical message and also send to alerts."""
         formatted_message, context = self._prepare_message(message, user, extra_data)
         if context:
@@ -48,7 +45,7 @@ class AppLogger:
         else:
             self.alerts_logger.error(f"CRITICAL: {message}")
 
-    def security_event(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
+    def security_event(self, message: str, user: Optional[Any] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Log a security-related event directly to security log."""
         formatted_message, context = self._prepare_message(f"SECURITY EVENT: {message}", user, extra_data)
         if context:
@@ -56,14 +53,14 @@ class AppLogger:
         else:
             self.security_logger.warning(formatted_message)
 
-    def user_activity(self, action: str, user: User, details: Optional[str] = None):
+    def user_activity(self, action: str, user: Any, details: Optional[str] = None):
         """Log user activity with consistent format."""
         message = f"User {getattr(user, 'email', 'unknown')} performed action: {action}"
         if details:
             message += f" - {details}"
         self.info(message, user)
 
-    def encryption_event(self, event: str, user: Optional[User] = None, success: bool = True):
+    def encryption_event(self, event: str, user: Optional[Any] = None, success: bool = True):
         """Log encryption-related events."""
         status = "SUCCESS" if success else "FAILURE"
         message = f"ENCRYPTION {status}: {event}"
@@ -72,7 +69,7 @@ class AppLogger:
         else:
             self.error(message, user)
 
-    def _log(self, level: str, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
+    def _log(self, level: str, message: str, user: Optional[Any] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Internal method to handle actual logging."""
         formatted_message, context = self._prepare_message(message, user, extra_data)
         log_method = getattr(self.logger, level)
@@ -81,7 +78,7 @@ class AppLogger:
         else:
             log_method(formatted_message)
 
-    def _prepare_message(self, message: str, user: Optional[User], extra_data: Optional[Dict[str, Any]]):
+    def _prepare_message(self, message: str, user: Optional[Any], extra_data: Optional[Dict[str, Any]]):
         """Return the formatted message and logging context."""
         formatted_message = self._format_message(message, user, extra_data)
         context = self._build_context(user, extra_data)
@@ -89,7 +86,7 @@ class AppLogger:
             return formatted_message, {'context': context}
         return formatted_message, None
 
-    def _build_context(self, user: Optional[User], extra_data: Optional[Dict[str, Any]]):
+    def _build_context(self, user: Optional[Any], extra_data: Optional[Dict[str, Any]]):
         context: Dict[str, Any] = {}
         if user is not None:
             context.setdefault('user_email', getattr(user, 'email', None))
@@ -100,7 +97,7 @@ class AppLogger:
             context.update(extra_data)
         return context
 
-    def _format_message(self, message: str, user: Optional[User] = None, extra_data: Optional[Dict[str, Any]] = None):
+    def _format_message(self, message: str, user: Optional[Any] = None, extra_data: Optional[Dict[str, Any]] = None):
         """Format message with user info and extra data."""
         if user:
             user_email = getattr(user, 'email', 'unknown')

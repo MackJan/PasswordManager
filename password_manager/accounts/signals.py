@@ -11,6 +11,11 @@ from allauth.account.signals import (
 from allauth.mfa.signals import authenticator_added, authenticator_removed
 from core.logging_utils import get_accounts_logger
 from core.middleware import get_client_ip
+from core.rate_limit import (
+    RateLimitScenario,
+    increment_rate_limit,
+    reset_rate_limit,
+)
 
 logger = get_accounts_logger()
 
@@ -20,6 +25,10 @@ def log_user_login(sender, request, user, **kwargs):
     """Log when a user successfully logs in"""
     ip = get_client_ip(request)
     logger.user_activity("user_logged_in_signal", user, f"User login signal received from IP: {ip}")
+    if ip and ip != 'unknown':
+        reset_rate_limit(RateLimitScenario.LOGIN_IP, ip)
+    if getattr(user, 'email', None):
+        reset_rate_limit(RateLimitScenario.LOGIN_EMAIL, user.email)
 
 
 @receiver(user_logged_out)
@@ -42,6 +51,22 @@ def log_login_failure(sender, credentials, request, **kwargs):
         "ip": ip,
         "credentials_keys": list(credentials.keys())
     })
+    if ip and ip != 'unknown':
+        increment_rate_limit(
+            RateLimitScenario.LOGIN_IP,
+            ip,
+            limit=10,
+            window=600,
+            block=1800,
+        )
+    if email and email != 'unknown':
+        increment_rate_limit(
+            RateLimitScenario.LOGIN_EMAIL,
+            email,
+            limit=6,
+            window=600,
+            block=1800,
+        )
 
 
 @receiver(user_signed_up)

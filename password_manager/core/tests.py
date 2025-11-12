@@ -2,6 +2,7 @@ from types import SimpleNamespace
 import logging
 from unittest.mock import MagicMock, patch
 
+from django.core.cache import cache
 from django.test import RequestFactory, SimpleTestCase
 
 from core.logging_utils import AppLogger
@@ -10,6 +11,12 @@ from core.middleware import (
     UserIdFilter,
     _request_data,
     get_client_ip,
+)
+from core.rate_limit import (
+    RateLimitScenario,
+    increment_rate_limit,
+    is_rate_limited,
+    reset_rate_limit,
 )
 from core import views as core_views
 
@@ -169,3 +176,33 @@ class CoreViewTests(SimpleTestCase):
         mock_logger.info.assert_called_once_with('Root redirect accessed')
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, '/home/')
+
+
+class RateLimitUtilsTests(SimpleTestCase):
+    def setUp(self):
+        cache.clear()
+
+    def test_increment_blocks_after_limit(self):
+        scenario = RateLimitScenario.LOGIN_IP
+        identifier = '192.0.2.5'
+
+        first = increment_rate_limit(scenario, identifier, limit=2, window=60, block=120)
+        second = increment_rate_limit(scenario, identifier, limit=2, window=60, block=120)
+        third = increment_rate_limit(scenario, identifier, limit=2, window=60, block=120)
+
+        self.assertTrue(first.allowed)
+        self.assertTrue(second.allowed)
+        self.assertFalse(third.allowed)
+        blocked = is_rate_limited(scenario, identifier)
+        self.assertFalse(blocked.allowed)
+        self.assertGreater(blocked.retry_after, 0)
+
+    def test_reset_rate_limit_clears_block(self):
+        scenario = RateLimitScenario.LOGIN_EMAIL
+        identifier = 'user@example.com'
+
+        increment_rate_limit(scenario, identifier, limit=1, window=60, block=120)
+        increment_rate_limit(scenario, identifier, limit=1, window=60, block=120)
+        reset_rate_limit(scenario, identifier)
+        status = is_rate_limited(scenario, identifier)
+        self.assertTrue(status.allowed)
