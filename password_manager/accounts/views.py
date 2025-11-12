@@ -15,6 +15,13 @@ from allauth.mfa.utils import is_mfa_enabled
 from allauth.mfa.totp.internal.auth import validate_totp_code
 from .models import CustomUser
 from core.logging_utils import get_accounts_logger
+from core.middleware import get_client_ip
+from core.rate_limit import (
+    RateLimitScenario,
+    increment_rate_limit,
+    is_rate_limited,
+    reset_rate_limit,
+)
 import qrcode
 import io
 import base64
@@ -235,9 +242,38 @@ def recovery_code_login(request):
     if request.user.is_authenticated:
         return redirect('home')
 
+    client_ip = get_client_ip(request)
+    ip_identifier = None if client_ip in (None, 'unknown') else client_ip
+
     if request.method == 'POST':
         email = request.POST.get('email')
         recovery_code = request.POST.get('recovery_code', '').strip().upper()
+
+        email_identifier = (email or '').strip().lower()
+
+        # Check if this identifier is currently blocked before doing any lookups.
+        rate_checks = []
+        if ip_identifier:
+            rate_checks.append(is_rate_limited(RateLimitScenario.RECOVERY_CODE_IP, ip_identifier))
+        if email_identifier:
+            rate_checks.append(is_rate_limited(RateLimitScenario.RECOVERY_CODE_EMAIL, email_identifier))
+
+        for check in rate_checks:
+            if not check.allowed:
+                logger.security_event(
+                    "Recovery code login blocked by rate limiter",
+                    extra_data={
+                        'email': email_identifier or email,
+                        'ip': client_ip,
+                        'retry_after': check.retry_after,
+                    }
+                )
+                messages.error(request, 'Too many recovery code attempts. Please try again later.')
+                response = render(request, 'accounts/recovery_login.html')
+                response.status_code = 429
+                if check.retry_after:
+                    response['Retry-After'] = str(check.retry_after)
+                return response
 
         if not email or not recovery_code:
             messages.error(request, 'Please provide both email and recovery code.')
@@ -269,6 +305,11 @@ def recovery_code_login(request):
                 logger.info("Authenticated using recovery code", user=user)
                 messages.success(request, 'Successfully authenticated using recovery code.')
 
+                if ip_identifier:
+                    reset_rate_limit(RateLimitScenario.RECOVERY_CODE_IP, ip_identifier)
+                if email_identifier:
+                    reset_rate_limit(RateLimitScenario.RECOVERY_CODE_EMAIL, email_identifier)
+
                 # Warn if running low on codes
                 if len(unused_codes) <= 2:
                     messages.warning(request, f'You have {len(unused_codes)} recovery codes remaining. Consider regenerating new codes.')
@@ -277,9 +318,41 @@ def recovery_code_login(request):
             else:
                 logger.warning("Invalid recovery code attempt", extra_data={'email': email})
                 messages.error(request, 'Invalid recovery code.')
+                if ip_identifier:
+                    increment_rate_limit(
+                        RateLimitScenario.RECOVERY_CODE_IP,
+                        ip_identifier,
+                        limit=5,
+                        window=1800,
+                        block=3600,
+                    )
+                if email_identifier:
+                    increment_rate_limit(
+                        RateLimitScenario.RECOVERY_CODE_EMAIL,
+                        email_identifier,
+                        limit=5,
+                        window=1800,
+                        block=3600,
+                    )
 
         except CustomUser.DoesNotExist:
             logger.warning("Recovery code login attempt for non-existent user", extra_data={'email': email})
             messages.error(request, 'Invalid email or recovery code.')
+            if ip_identifier:
+                increment_rate_limit(
+                    RateLimitScenario.RECOVERY_CODE_IP,
+                    ip_identifier,
+                    limit=5,
+                    window=1800,
+                    block=3600,
+                )
+            if email_identifier:
+                increment_rate_limit(
+                    RateLimitScenario.RECOVERY_CODE_EMAIL,
+                    email_identifier,
+                    limit=5,
+                    window=1800,
+                    block=3600,
+                )
 
     return render(request, 'accounts/recovery_login.html')

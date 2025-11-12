@@ -9,6 +9,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.core import management
+from django.core.cache import cache
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
@@ -31,6 +32,7 @@ class AccountsViewTests(TestCase):
             email='user@example.com',
             password='password123',
         )
+        cache.clear()
 
     def _prepare_request(self, request, *, user=None):
         middleware = SessionMiddleware(lambda req: None)
@@ -38,6 +40,7 @@ class AccountsViewTests(TestCase):
         request.session.save()
         request._messages = FallbackStorage(request)
         request.user = user or self.user
+        request.META.setdefault('REMOTE_ADDR', '127.0.0.1')
         return request
 
     def test_generate_recovery_codes_creates_formatted_codes(self):
@@ -168,13 +171,16 @@ class AccountsViewTests(TestCase):
         recovery_auth = MagicMock()
         recovery_auth.data = {'unused_codes': ['CODE-ONE']}
 
+        allowed = SimpleNamespace(allowed=True, retry_after=0)
         with patch('accounts.views.CustomUser.objects.get', return_value=self.user), patch(
             'accounts.views.Authenticator.objects.filter'
         ) as mock_filter, patch('accounts.views.messages.success') as mock_success, patch(
             'accounts.views.messages.warning'
         ) as mock_warning, patch('accounts.views.messages.error') as mock_error, patch(
-            'django.contrib.auth.login'
-        ) as mock_login:
+            'accounts.views.login'
+        ) as mock_login, patch('accounts.views.reset_rate_limit') as mock_reset, patch(
+            'accounts.views.is_rate_limited', return_value=allowed
+        ):
             mock_filter.return_value.first.return_value = recovery_auth
             response = views.recovery_code_login(request)
 
@@ -182,6 +188,7 @@ class AccountsViewTests(TestCase):
         mock_success.assert_called_once()
         mock_error.assert_not_called()
         mock_warning.assert_called()
+        mock_reset.assert_any_call(views.RateLimitScenario.RECOVERY_CODE_IP, '127.0.0.1')
         self.assertEqual(response.status_code, 302)
 
     def test_recovery_code_login_missing_data(self):
@@ -196,6 +203,23 @@ class AccountsViewTests(TestCase):
 
         mock_error.assert_called_once()
         self.assertEqual(response.status_code, 200)
+
+    def test_recovery_code_login_rate_limited_blocks_attempt(self):
+        anonymous = AnonymousUser()
+        request = self._prepare_request(self.factory.post('/profile/recovery-login/', {
+            'email': 'user@example.com',
+            'recovery_code': 'CODE-ONE',
+        }), user=anonymous)
+
+        rate_block = SimpleNamespace(allowed=False, retry_after=120)
+        with patch('accounts.views.is_rate_limited', side_effect=[rate_block, rate_block]), patch(
+            'accounts.views.messages.error'
+        ) as mock_error:
+            response = views.recovery_code_login(request)
+
+        mock_error.assert_called_once()
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response['Retry-After'], '120')
 
 
 class HardenedPasswordResetViewTests(TestCase):
@@ -257,7 +281,7 @@ class AccountManagementCommandTests(TestCase):
         auth_without_seed.data = {}
         auth_without_seed.user.email = 'user@example.com'
         auth_with_seed = MagicMock()
-        auth_with_seed.data = {'seed': 'existing'}
+        auth_with_seed.data = {'seed': 'existing', 'used_mask': 0}
         mock_authenticator.objects.filter.return_value = [auth_without_seed, auth_with_seed]
 
         out = StringIO()
