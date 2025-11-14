@@ -2,7 +2,7 @@
 
 This is a secure password manager web application built with Django. It is designed to store and manage your passwords securely, with a strong focus on encryption and security best practices. This project was developed as part of a web application security course.
 
-Currently hosted on [Here](https://janmack.de)
+Currently hosted on [Here](https://password.janmack.de)
 ## Features
 
 *   **Secure Password Storage:** Store your passwords and other sensitive information in an encrypted vault.
