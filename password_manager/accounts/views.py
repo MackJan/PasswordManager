@@ -4,6 +4,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
+from django.utils.crypto import constant_time_compare
 from django.views.decorators.http import require_POST, require_http_methods
 from allauth.account.views import (
     PasswordResetFromKeyView,
@@ -14,6 +15,13 @@ from allauth.mfa.totp.internal.auth import get_totp_secret
 from allauth.mfa.utils import is_mfa_enabled
 from allauth.mfa.totp.internal.auth import validate_totp_code
 from .models import CustomUser
+from .recovery import (
+    ensure_hashed_recovery_codes,
+    generate_recovery_codes,
+    get_recovery_codes_data,
+    hash_recovery_code,
+    normalize_recovery_code,
+)
 from core.logging_utils import get_accounts_logger
 from core.middleware import get_client_ip
 from core.rate_limit import (
@@ -25,8 +33,6 @@ from core.rate_limit import (
 import qrcode
 import io
 import base64
-import secrets
-import string
 
 # Get centralized logger
 logger = get_accounts_logger()
@@ -46,31 +52,6 @@ class HardenedPasswordResetFromKeyView(PasswordResetFromKeyView):
             )
             return redirect('account_reset_password')
         return super().render_to_response(context, **response_kwargs)
-
-def generate_recovery_codes(count=10):
-    """Generate recovery codes for 2FA backup"""
-    codes = []
-    for _ in range(count):
-        # Generate 8-character alphanumeric codes
-        code = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
-        # Format as XXXX-XXXX for readability
-        formatted_code = f"{code[:4]}-{code[4:]}"
-        codes.append(formatted_code)
-    return codes
-
-
-def get_recovery_codes_data(codes):
-    """
-    Generate the data structure that allauth expects for recovery codes
-    """
-    # Generate a seed for the recovery codes
-    seed = secrets.token_bytes(32)
-    
-    return {
-        'seed': seed.hex(),  # This is what allauth expects
-        'unused_codes': codes,  # Keep this for compatibility with existing views
-        'used_mask': 0  # Bitfield to track which codes have been used (0 = all unused)
-    }
 
 @require_http_methods(["GET"])
 def logout_page(request):
@@ -292,11 +273,29 @@ def recovery_code_login(request):
                 messages.error(request, 'No recovery codes found for this account.')
                 return render(request, 'accounts/recovery_login.html')
 
+            if ensure_hashed_recovery_codes(recovery_auth.data):
+                recovery_auth.save(update_fields=['data'])
+            seed = recovery_auth.data.get('seed')
             unused_codes = recovery_auth.data.get('unused_codes', [])
 
-            if recovery_code in unused_codes:
-                # Remove the used code
-                unused_codes.remove(recovery_code)
+            if not seed:
+                messages.error(request, 'Recovery codes are not configured correctly. Please regenerate them.')
+                return render(request, 'accounts/recovery_login.html')
+
+            try:
+                normalized_code = normalize_recovery_code(recovery_code)
+                candidate_hash = hash_recovery_code(seed, normalized_code)
+            except ValueError:
+                messages.error(request, 'Invalid recovery code.')
+                return render(request, 'accounts/recovery_login.html')
+
+            match_index = next(
+                (idx for idx, code in enumerate(unused_codes) if constant_time_compare(code, candidate_hash)),
+                None,
+            )
+
+            if match_index is not None:
+                unused_codes.pop(match_index)
                 recovery_auth.data['unused_codes'] = unused_codes
                 recovery_auth.save()
 
