@@ -1,7 +1,8 @@
 import logging
 import threading
-from ipaddress import ip_address
+from ipaddress import ip_address, ip_network
 
+from django.conf import settings
 from django.http import HttpResponse
 
 from core.logging_utils import get_security_logger
@@ -43,28 +44,52 @@ def _normalize_ip(candidate: str):
         return None
 
 
+def _remote_addr_is_trusted(meta):
+    remote_addr = (meta or {}).get('REMOTE_ADDR')
+    if not remote_addr:
+        return False
+    try:
+        candidate = ip_address(remote_addr)
+    except ValueError:
+        return False
+    for network in getattr(settings, 'TRUSTED_PROXY_IPS', ()):  # type: ignore[attr-defined]
+        try:
+            network_obj = network if not isinstance(network, str) else ip_network(network, strict=False)
+        except ValueError:
+            continue
+        if candidate in network_obj:
+            return True
+    return False
+
+
 def _candidate_ips_from_request(request):
     """Yield potential client IP addresses from request headers."""
     meta = getattr(request, 'META', {}) or {}
+    trust_proxy_headers = _remote_addr_is_trusted(meta)
 
-    forwarded_for = meta.get('HTTP_X_FORWARDED_FOR')
-    if forwarded_for:
-        for part in forwarded_for.split(','):
-            cleaned = _normalize_ip(part)
+    if trust_proxy_headers:
+        forwarded_for = meta.get('HTTP_X_FORWARDED_FOR')
+        if forwarded_for:
+            for part in forwarded_for.split(','):
+                cleaned = _normalize_ip(part)
+                if cleaned:
+                    yield cleaned
+
+        forwarded_header = meta.get('HTTP_FORWARDED')
+        if forwarded_header:
+            for segment in forwarded_header.split(';'):
+                cleaned = _normalize_ip(segment)
+                if cleaned:
+                    yield cleaned
+
+        for header in ('HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP'):
+            cleaned = _normalize_ip(meta.get(header))
             if cleaned:
                 yield cleaned
 
-    forwarded_header = meta.get('HTTP_FORWARDED')
-    if forwarded_header:
-        for segment in forwarded_header.split(';'):
-            cleaned = _normalize_ip(segment)
-            if cleaned:
-                yield cleaned
-
-    for header in ('HTTP_X_REAL_IP', 'HTTP_CF_CONNECTING_IP', 'REMOTE_ADDR'):
-        cleaned = _normalize_ip(meta.get(header))
-        if cleaned:
-            yield cleaned
+    cleaned_remote = _normalize_ip(meta.get('REMOTE_ADDR'))
+    if cleaned_remote:
+        yield cleaned_remote
 
 
 def get_client_ip(request):

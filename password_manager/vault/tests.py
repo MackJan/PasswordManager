@@ -28,7 +28,7 @@ from vault.crypto_utils import (
 )
 from vault.encryption_service import EncryptionService, VaultItemProxy
 from vault import views as vault_views
-from vault.fields import EncryptedField, EncryptedKeyField, SECRET_KEY
+from vault.fields import EncryptedField, EncryptedKeyField
 from vault.models import VaultItem
 from vault.utils import decrypt_data, encrypt_data
 
@@ -199,7 +199,7 @@ class EncryptionServiceTests(TestCase):
         self.assertEqual(vault_item.dek_wrap_nonce_b64, 'deknonce')
         self.assertEqual(vault_item.ciphertext_b64, 'ciphertext')
         self.assertEqual(vault_item.item_nonce_b64, 'itemnonce')
-        self.assertEqual(vault_item.display_name, 'Example Vault Item')
+        self.assertEqual(vault_item.display_name, '')
 
         mock_generate_salt.assert_called_once()
         mock_wrap_dek.assert_called_once_with(b'd' * 32, b'u' * 32, str(vault_item.id))
@@ -320,11 +320,13 @@ class EncryptionServiceTests(TestCase):
 class VaultFieldTests(SimpleTestCase):
     def test_encrypted_field_encrypts_on_prep(self):
         field = EncryptedField()
-        with patch('vault.fields.encrypt_data', return_value='ciphertext') as mock_encrypt:
+        with patch('vault.fields.encrypt_data', return_value='ciphertext') as mock_encrypt, patch(
+            'vault.fields._get_legacy_field_key', return_value=b'k' * 32
+        ):
             result = field.get_prep_value('secret')
 
         self.assertEqual(result, 'ciphertext')
-        mock_encrypt.assert_called_once_with('secret', secret_key=SECRET_KEY)
+        mock_encrypt.assert_called_once_with('secret', secret_key=b'k' * 32)
 
     def test_encrypted_field_returns_none_for_null(self):
         field = EncryptedField()
@@ -333,11 +335,13 @@ class VaultFieldTests(SimpleTestCase):
 
     def test_encrypted_key_field_decrypts_from_db(self):
         field = EncryptedKeyField()
-        with patch('vault.fields.decrypt_data', return_value='plaintext') as mock_decrypt:
+        with patch('vault.fields.decrypt_data', return_value='plaintext') as mock_decrypt, patch(
+            'vault.fields._get_legacy_field_key', return_value=b'k' * 32
+        ), patch('vault.fields._get_fallback_key', return_value=b'k' * 32):
             result = field.from_db_value('cipher', None, None)
 
         self.assertEqual(result, 'plaintext')
-        mock_decrypt.assert_called_once_with('cipher', secret_key=SECRET_KEY)
+        mock_decrypt.assert_called_once_with('cipher', secret_key=b'k' * 32, fallback_key=b'k' * 32)
 
 
 class VaultViewsTests(TestCase):

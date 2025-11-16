@@ -2,6 +2,8 @@ import secrets
 from django.core.management.base import BaseCommand
 from allauth.mfa.models import Authenticator
 
+from accounts.recovery import ensure_hashed_recovery_codes
+
 
 class Command(BaseCommand):
     help = 'Fix recovery codes authenticators that are missing the seed key'
@@ -27,6 +29,9 @@ class Command(BaseCommand):
             if 'used_mask' not in auth.data or not isinstance(auth.data.get('used_mask'), int):
                 # Initialize as 0 (bitfield where all codes are unused)
                 auth.data['used_mask'] = 0
+                needs_fix = True
+
+            if ensure_hashed_recovery_codes(auth.data):
                 needs_fix = True
 
             if needs_fix:

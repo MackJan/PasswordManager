@@ -14,6 +14,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from accounts import views
+from accounts.recovery import hash_recovery_code
 
 
 try:
@@ -51,12 +52,13 @@ class AccountsViewTests(TestCase):
             self.assertEqual(code[4], '-')
 
     def test_get_recovery_codes_data_provides_seed_and_codes(self):
-        with patch('accounts.views.secrets.token_bytes', return_value=b'\x01' * 32):
+        with patch('accounts.recovery.secrets.token_bytes', return_value=b'\x01' * 32):
             codes = ['ABCD-EFGH']
             data = views.get_recovery_codes_data(codes)
 
         self.assertEqual(data['seed'], '01' * 32)
-        self.assertEqual(data['unused_codes'], codes)
+        expected_hash = hash_recovery_code(b'\x01' * 32, 'ABCD-EFGH')
+        self.assertEqual(data['unused_codes'], [expected_hash])
 
     @patch('accounts.views.logout')
     def test_logout_page_logs_and_redirects(self, mock_logout):
@@ -138,8 +140,9 @@ class AccountsViewTests(TestCase):
         request = self._prepare_request(self.factory.post('/profile/regenerate-recovery-codes/'))
 
         existing_authenticator = MagicMock()
+        hashed_code = 'f' * 64
         with patch('accounts.views.generate_recovery_codes', return_value=['NEW-CODE']), patch(
-            'accounts.views.get_recovery_codes_data', return_value={'seed': 'abc', 'unused_codes': ['NEW-CODE']}
+            'accounts.views.get_recovery_codes_data', return_value={'seed': 'abc', 'unused_codes': [hashed_code]}
         ), patch(
             'accounts.views.Authenticator.objects.get_or_create', return_value=(existing_authenticator, False)
         ), patch('accounts.views.messages.success') as mock_success:
@@ -165,11 +168,13 @@ class AccountsViewTests(TestCase):
         anonymous = AnonymousUser()
         request = self._prepare_request(self.factory.post('/profile/recovery-login/', {
             'email': 'user@example.com',
-            'recovery_code': 'CODE-ONE',
+            'recovery_code': 'CODE-ONEX',
         }), user=anonymous)
 
         recovery_auth = MagicMock()
-        recovery_auth.data = {'unused_codes': ['CODE-ONE']}
+        seed = '01' * 32
+        hashed_code = hash_recovery_code(seed, 'CODE-ONEX')
+        recovery_auth.data = {'seed': seed, 'unused_codes': [hashed_code]}
 
         allowed = SimpleNamespace(allowed=True, retry_after=0)
         with patch('accounts.views.CustomUser.objects.get', return_value=self.user), patch(
