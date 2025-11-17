@@ -52,6 +52,14 @@ def _remote_addr_is_trusted(meta):
         candidate = ip_address(remote_addr)
     except ValueError:
         return False
+
+    # Always trust proxy headers coming from loopback or private addresses.
+    # In containerized deployments (e.g., behind nginx), REMOTE_ADDR will
+    # typically be the proxy's internal IP (127.0.0.1 or RFC1918 ranges), and
+    # failing to trust those addresses results in every request resolving to
+    # the proxy instead of the real client.
+    if candidate.is_loopback or candidate.is_private:
+        return True
     for network in getattr(settings, 'TRUSTED_PROXY_IPS', ()):  # type: ignore[attr-defined]
         try:
             network_obj = network if not isinstance(network, str) else ip_network(network, strict=False)
