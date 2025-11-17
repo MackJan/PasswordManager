@@ -10,8 +10,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
+import base64
+import binascii
+import hashlib
 import os
+from ipaddress import ip_network
+from pathlib import Path
+
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +39,42 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(" ")
     if origin.strip()
 ]
+
+
+def _env_bool(name, default="False"):
+    value = os.environ.get(name, default)
+    return str(value).lower() in {"1", "true", "yes", "on"}
+
+
+def _parse_trusted_proxies(raw_value: str):
+    networks = []
+    for token in raw_value.replace(",", " ").split():
+        candidate = token.strip()
+        if not candidate:
+            continue
+        try:
+            networks.append(ip_network(candidate, strict=False))
+        except ValueError:
+            continue
+    return tuple(networks)
+
+
+SECURE_SSL_REDIRECT = _env_bool("DJANGO_SECURE_SSL_REDIRECT", "True")
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", "True")
+CSRF_COOKIE_SECURE = _env_bool("CSRF_COOKIE_SECURE", "True")
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", "Strict")
+CSRF_COOKIE_SAMESITE = os.environ.get("CSRF_COOKIE_SAMESITE", "Strict")
+SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", "True")
+SECURE_HSTS_PRELOAD = _env_bool("SECURE_HSTS_PRELOAD", "True")
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = os.environ.get("SECURE_REFERRER_POLICY", "same-origin")
+
+TRUSTED_PROXY_IPS = _parse_trusted_proxies(os.environ.get("TRUSTED_PROXY_IPS", ""))
+TRUST_PRIVATE_PROXIES = _env_bool("TRUST_PRIVATE_PROXIES", "True")
 
 # Application definition
 INSTALLED_APPS = [
@@ -181,6 +223,45 @@ WHITENOISE_AUTOREFRESH = True
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+def _decode_secret(value):
+    if not value:
+        return None
+    for decoder in (base64.b64decode, binascii.unhexlify):
+        try:
+            decoded = decoder(value)
+        except (binascii.Error, ValueError):
+            continue
+        if len(decoded) in (16, 24, 32):
+            return decoded
+    if len(value) in (16, 24, 32):
+        return value.encode('utf-8')
+    return None
+
+
+def _derive_legacy_field_key():
+    raw_key = os.environ.get("LEGACY_FIELD_KEY")
+    decoded = _decode_secret(raw_key)
+    if decoded:
+        return decoded
+    if not SECRET_KEY:
+        return None
+    return hashlib.sha256(SECRET_KEY.encode('utf-8')).digest()
+
+
+def _derive_legacy_fallback_key(primary_key: bytes):
+    raw_key = os.environ.get("LEGACY_FIELD_FALLBACK_KEY")
+    decoded = _decode_secret(raw_key)
+    return decoded or primary_key
+
+
+LEGACY_FIELD_KEY = _derive_legacy_field_key()
+if LEGACY_FIELD_KEY is None:
+    raise ImproperlyConfigured(
+        "LEGACY_FIELD_KEY could not be derived. Set SECRET_KEY or provide LEGACY_FIELD_KEY."
+    )
+LEGACY_FIELD_FALLBACK_KEY = _derive_legacy_fallback_key(LEGACY_FIELD_KEY)
 
 # Logging Configuration
 LOG_DIR = BASE_DIR / 'logs'

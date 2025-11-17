@@ -1,7 +1,19 @@
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
-from .utils import encrypt_data, decrypt_data
 
-SECRET_KEY = b'0MoRi0Kgs7iLDut2bSrTghGHL1pDoQyn'  # AES-256 requires a 32-byte key
+from .utils import decrypt_data, encrypt_data
+
+
+def _get_legacy_field_key():
+    key = getattr(settings, 'LEGACY_FIELD_KEY', None)
+    if key is None:
+        raise ImproperlyConfigured('LEGACY_FIELD_KEY is not configured')
+    return key
+
+
+def _get_fallback_key():
+    return getattr(settings, 'LEGACY_FIELD_FALLBACK_KEY', None)
 
 
 class EncryptedField(models.TextField):
@@ -15,7 +27,11 @@ class EncryptedField(models.TextField):
         """
         if value is None:
             return value
-        return decrypt_data(value, secret_key=SECRET_KEY)
+        return decrypt_data(
+            value,
+            secret_key=_get_legacy_field_key(),
+            fallback_key=_get_fallback_key(),
+        )
 
     def get_prep_value(self, value):
         """
@@ -23,7 +39,7 @@ class EncryptedField(models.TextField):
         """
         if value is None:
             return value
-        return encrypt_data(value, secret_key=SECRET_KEY)
+        return encrypt_data(value, secret_key=_get_legacy_field_key())
 
 
 class EncryptedKeyField(models.TextField):
@@ -37,7 +53,11 @@ class EncryptedKeyField(models.TextField):
         """
         if value is None:
             return value
-        return decrypt_data(value, secret_key=SECRET_KEY)
+        return decrypt_data(
+            value,
+            secret_key=_get_legacy_field_key(),
+            fallback_key=_get_fallback_key(),
+        )
 
     def get_prep_value(self, value):
         """
@@ -45,4 +65,4 @@ class EncryptedKeyField(models.TextField):
         """
         if value is None:
             return value
-        return encrypt_data(value, secret_key=SECRET_KEY)
+        return encrypt_data(value, secret_key=_get_legacy_field_key())

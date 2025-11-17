@@ -3,7 +3,7 @@ import logging
 from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
-from django.test import RequestFactory, SimpleTestCase
+from django.test import RequestFactory, SimpleTestCase, override_settings
 
 from core.logging_utils import AppLogger
 from core.middleware import (
@@ -73,12 +73,18 @@ class AppLoggerTests(SimpleTestCase):
 
 class MiddlewareTests(SimpleTestCase):
     def test_get_client_ip_prefers_public_forwarded_header(self):
-        request = SimpleNamespace(META={'HTTP_X_FORWARDED_FOR': '10.0.0.1, 8.8.8.8'})
-        self.assertEqual(get_client_ip(request), '8.8.8.8')
+        request = SimpleNamespace(META={'REMOTE_ADDR': '127.0.0.1', 'HTTP_X_FORWARDED_FOR': '10.0.0.1, 8.8.8.8'})
+        with override_settings(TRUST_PRIVATE_PROXIES=True):
+            self.assertEqual(get_client_ip(request), '8.8.8.8')
+
+    def test_get_client_ip_trusts_loopback_proxy_by_default(self):
+        request = SimpleNamespace(META={'REMOTE_ADDR': '127.0.0.1', 'HTTP_X_FORWARDED_FOR': '198.51.100.7'})
+        self.assertEqual(get_client_ip(request), '198.51.100.7')
 
     def test_get_client_ip_ignores_invalid_values(self):
-        request = SimpleNamespace(META={'HTTP_X_FORWARDED_FOR': 'invalid, 2001:db8::1'})
-        self.assertEqual(get_client_ip(request), '2001:db8::1')
+        request = SimpleNamespace(META={'REMOTE_ADDR': '192.0.2.1', 'HTTP_X_FORWARDED_FOR': 'invalid, 2001:db8::1'})
+        with override_settings(TRUSTED_PROXY_IPS=('192.0.2.1/32',)):
+            self.assertEqual(get_client_ip(request), '2001:db8::1')
 
     def test_get_client_ip_falls_back_to_remote_addr(self):
         request = SimpleNamespace(META={'REMOTE_ADDR': '198.51.100.5'})
@@ -114,7 +120,7 @@ class MiddlewareTests(SimpleTestCase):
             email = 'auth@example.com'
 
         class DummyRequest:
-            META = {'HTTP_X_FORWARDED_FOR': '198.51.100.7'}
+            META = {'REMOTE_ADDR': '127.0.0.1', 'HTTP_X_FORWARDED_FOR': '198.51.100.7'}
             user = AuthenticatedUser()
             method = 'GET'
 
@@ -131,8 +137,9 @@ class MiddlewareTests(SimpleTestCase):
             captured_state['method'] = getattr(_request_data, 'method', None)
             return 'response'
 
-        middleware = LoggingMiddleware(get_response)
-        response = middleware(DummyRequest())
+        with override_settings(TRUSTED_PROXY_IPS=('127.0.0.1/32',)):
+            middleware = LoggingMiddleware(get_response)
+            response = middleware(DummyRequest())
 
         self.assertEqual(response, 'response')
         self.assertEqual(captured_state['user_id'], '7')

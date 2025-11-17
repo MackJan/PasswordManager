@@ -163,7 +163,7 @@ class EncryptionService:
                 ciphertext_b64='',
                 item_nonce_b64='',
                 item_salt_b64=item_salt_b64,
-                display_name=item_data.get('name', '')[:50] if item_data.get('name') else ''
+                display_name='',
             )
             logger.info(f"Created vault item {vault_item.id} for user {user.id}", user)
 
@@ -392,7 +392,7 @@ class EncryptionService:
             vault_item.ciphertext_b64 = ciphertext_b64
             vault_item.item_nonce_b64 = item_nonce_b64
             vault_item.item_salt_b64 = item_salt_b64
-            vault_item.display_name = item_data.get('name', '')[:50] if item_data.get('name') else ''
+            vault_item.display_name = ''
             vault_item.save()
             
             return vault_item

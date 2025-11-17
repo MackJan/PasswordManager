@@ -270,13 +270,18 @@
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.dataset.variant = variant;
-    toast.innerHTML = `
-      <div class="toast-message">${message}</div>
-      <button class="toast-dismiss" type="button" aria-label="Dismiss">&times;</button>
-    `;
+    const body = document.createElement('div');
+    body.className = 'toast-message';
+    body.textContent = message;
+    const dismissBtn = document.createElement('button');
+    dismissBtn.className = 'toast-dismiss';
+    dismissBtn.type = 'button';
+    dismissBtn.setAttribute('aria-label', 'Dismiss');
+    dismissBtn.textContent = '×';
+    toast.appendChild(body);
+    toast.appendChild(dismissBtn);
     stack.appendChild(toast);
-    const dismiss = toast.querySelector('.toast-dismiss');
-    dismiss.addEventListener('click', () => {
+    dismissBtn.addEventListener('click', () => {
       toast.remove();
     });
     window.setTimeout(() => {
