@@ -55,9 +55,19 @@ class HardenedPasswordResetFromKeyView(PasswordResetFromKeyView):
 
 @require_http_methods(["GET"])
 def logout_page(request):
+    """
+    Complete logout that clears all session data including MFA partial authentication.
+    This is useful when users are stuck at 2FA prompt without access to their device.
+    """
     if request.user.is_authenticated:
         logger.info("User logged out", user=request.user)
+
+    # Clear the entire session to remove any partial authentication state
+    request.session.flush()
+
+    # Also call Django's logout to ensure everything is cleared
     logout(request)
+
     return redirect('/login/')
 
 @require_http_methods(["GET"])

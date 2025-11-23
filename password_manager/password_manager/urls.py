@@ -35,5 +35,5 @@ urlpatterns = [
     # Legacy redirects for old authentication URLs
     path('login/', RedirectView.as_view(url='/accounts/login/', permanent=True)),
     path('register/', RedirectView.as_view(url='/accounts/signup/', permanent=True)),
-    path('logout/', RedirectView.as_view(url='/accounts/logout/', permanent=True)),
+    path('logout/', RedirectView.as_view(url='/profile/logout/', permanent=False), name="logout"),
 ]
