@@ -228,10 +228,7 @@ def _decode_secret(value):
     if not value:
         return None
     for decoder in (base64.b64decode, binascii.unhexlify):
-        try:
-            decoded = decoder(value)
-        except (binascii.Error, ValueError):
-            continue
+        decoded = decoder(value)
         if len(decoded) in (16, 24, 32):
             return decoded
     if len(value) in (16, 24, 32):
