@@ -833,6 +833,7 @@ docker compose exec web python manage.py migrate
 
 # 5. Create superuser
 docker compose exec web python manage.py createsuperuser
+# this account will have access to the /admin page
 
 # 6. Collect static files
 docker compose exec web python manage.py collectstatic --noinput
@@ -843,6 +844,14 @@ docker compose exec web python manage.py collectstatic --noinput
 # Grafana: http://localhost:3000
 ```
 
+### 5.3.1 Loki setup
+```bash
+# Access Grafana at http://localhost:3000 (admin/test_password!)
+# Add Loki data source:
+# URL: http://loki:3100
+# Import dashboard from grafana-dashboard.json
+```
+
 ### 5.4 Production Considerations
 
 **AMK Management:**
@@ -850,7 +859,7 @@ docker compose exec web python manage.py collectstatic --noinput
 # Generate AMK
 python manage.py manage_amk generate
 
-# Backup AMK (CRITICAL!)
+# Backup AMK
 cp password_manager/.keys/amk.key /secure/backup/location/
 
 # Use environment variable in production
@@ -1044,6 +1053,19 @@ DEFAULT_FROM_EMAIL = 'Password Manager <noreply@janmack.de>'
 7. **Password Strength Meter:** Real-time feedback during entry creation
 
 ---
+
+### 7.3 Accepted SonarQube issues
+Currently Open:
+
+37 Code smell issues
+
+8 Accepted "Cross-Site Request Forgery (CSRF)" Security Hotspots
+- These are accepted due to the use of Django's built-in CSRF protection which adequately mitigates CSRF risks.
+- Those hotspots are in my opinion also false positives since they are always raised when allowing POST requests for a view.
+
+3 Accepted Security Hotspots for the local and production deployment Dockerfile
+
+They can all be viewed in the [SonarCloud dashboard](https://sonarcloud.io/summary/new_code?id=MackJan_PasswordManager&branch=main)
 
 ## 8. Conclusion
 
