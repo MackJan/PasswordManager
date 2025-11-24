@@ -228,39 +228,13 @@ def _decode_secret(value):
     if not value:
         return None
     for decoder in (base64.b64decode, binascii.unhexlify):
-        try:
-            decoded = decoder(value)
-        except (binascii.Error, ValueError):
-            continue
+        decoded = decoder(value)
         if len(decoded) in (16, 24, 32):
             return decoded
     if len(value) in (16, 24, 32):
         return value.encode('utf-8')
     return None
 
-
-def _derive_legacy_field_key():
-    raw_key = os.environ.get("LEGACY_FIELD_KEY")
-    decoded = _decode_secret(raw_key)
-    if decoded:
-        return decoded
-    if not SECRET_KEY:
-        return None
-    return hashlib.sha256(SECRET_KEY.encode('utf-8')).digest()
-
-
-def _derive_legacy_fallback_key(primary_key: bytes):
-    raw_key = os.environ.get("LEGACY_FIELD_FALLBACK_KEY")
-    decoded = _decode_secret(raw_key)
-    return decoded or primary_key
-
-
-LEGACY_FIELD_KEY = _derive_legacy_field_key()
-if LEGACY_FIELD_KEY is None:
-    raise ImproperlyConfigured(
-        "LEGACY_FIELD_KEY could not be derived. Set SECRET_KEY or provide LEGACY_FIELD_KEY."
-    )
-LEGACY_FIELD_FALLBACK_KEY = _derive_legacy_fallback_key(LEGACY_FIELD_KEY)
 
 # Logging Configuration
 LOG_DIR = BASE_DIR / 'logs'

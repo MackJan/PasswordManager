@@ -325,6 +325,10 @@ class RateLimitMiddleware:
 
     def _too_many_requests(self, message, identifier, retry_after=None):
         retry_value = retry_after if retry_after is not None else 0
+        self.logger.security_event(
+            "Rate limit triggered",
+            extra_data={"identifier": identifier, "retry_after": retry_value},
+        )
         response = HttpResponse(message, status=429)
         if retry_value:
             response["Retry-After"] = str(retry_value)

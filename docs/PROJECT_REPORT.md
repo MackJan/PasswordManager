@@ -1006,20 +1006,20 @@ DEFAULT_FROM_EMAIL = 'Password Manager <noreply@janmack.de>'
 
 ## 6. Security Compliance Matrix
 
-| Requirement | Status | Implementation |
-|-------------|--------|----------------|
-| **Secure Credential Storage** | ✅ | AES-256-GCM, 3-tier key hierarchy, HKDF salt derivation |
-| **Server-Side Encryption** | ✅ | All encryption in Django backend |
-| **TLS Protection** | ✅ | HTTPS enforced, HSTS headers |
-| **Master Password Security** | ✅ | Argon2 hashing, never stored plaintext |
-| **Session Security** | ✅ | Secure cookies, HttpOnly, SameSite=Strict |
-| **Optional MFA** | ✅ | TOTP + recovery codes via django-allauth |
-| **SQL Injection Prevention** | ✅ | Django ORM parameterized queries |
-| **XSS Prevention** | ✅ | Template auto-escaping, CSP headers |
-| **CSRF Protection** | ✅ | Django middleware, tokens on all forms |
-| **Access Control** | ✅ | Per-user ownership, login required |
-| **Generic Error Messages** | ✅ | No stack traces or internals exposed |
-| **Comprehensive Logging** | ✅ | Structured JSON logs, Grafana monitoring |
+| Requirement                   | Implementation                                          |
+|-------------------------------|---------------------------------------------------------|
+| **Secure Credential Storage** | AES-256-GCM, 3-tier key hierarchy, HKDF salt derivation |
+| **Server-Side Encryption**    | All encryption in Django backend                        |
+| **TLS Protection**            | HTTPS enforced, HSTS headers                            |
+| **Master Password Security**  | Argon2 hashing, never stored plaintext                  |
+| **Session Security**          | Secure cookies, HttpOnly, SameSite=Strict               |
+| **Optional MFA**              | TOTP + recovery codes via django-allauth                |
+| **SQL Injection Prevention**  | Django ORM parameterized queries                        |
+| **XSS Prevention**            | Template auto-escaping, CSP headers                     |
+| **CSRF Protection**           | Django middleware, tokens on all forms                  |
+| **Access Control**            | Per-user ownership, login required                      |
+| **Generic Error Messages**    | No stack traces or internals exposed                    |
+| **Comprehensive Logging**     | Structured JSON logs, Grafana monitoring                |
 
 ---
 

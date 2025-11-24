@@ -10,4 +10,5 @@ urlpatterns = [
     path('regenerate-recovery-codes/', views.regenerate_recovery_codes, name='regenerate_recovery_codes'),
     path('show-recovery-codes/', views.show_recovery_codes, name='show_recovery_codes'),
     path('recovery-login/', views.recovery_code_login, name='recovery_code_login'),
+    path('logout/', views.logout_page, name='logout_page'),
 ]
