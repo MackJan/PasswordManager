@@ -790,6 +790,12 @@ docker compose exec web coverage report
 
 Result:
 1. Redirected to the real website with this error:
+```
+Forbidden (403)
+CSRF verification failed. Request aborted.
+
+More information is available with DEBUG=True.
+```
 2.	Incident was logged in Grafana by the django.security.csrf logger:
 - Forbidden (Origin checking failed - null does not match any trusted origins.): /vault/
 
