@@ -95,15 +95,6 @@ handling:
    re-encrypt the payload to provide forward secrecy for edited
    secrets.【F:password_manager/vault/encryption_service.py†L364-L405】
 
-## Legacy Encryption Artifacts
-
-Earlier migrations stored plaintext fields encrypted directly with AES-256 in
-CFB mode using a static 32-byte key defined in `vault.fields.SECRET_KEY`. These
-model fields have since been removed from `VaultItem`, but the field classes and
-utility functions remain to decrypt legacy rows during migration if needed. They
-operate by concatenating a random 16-byte IV with the ciphertext and encoding it
-using URL-safe Base64.【F:password_manager/vault/utils.py†L1-L30】【F:password_manager/vault/fields.py†L1-L36】【F:password_manager/vault/migrations/0001_initial.py†L1-L28】【F:password_manager/vault/migrations/0003_alter_vaultitem_options_remove_vaultitem_name_and_more.py†L1-L49】
-
 ## Sequence Diagram
 
 ```mermaid
@@ -126,16 +117,3 @@ sequenceDiagram
     User->>User: Encrypt item JSON with derived key (AAD={user,item_uuid,algo_ver})
     User->>DB: Persist wrapped DEK, ciphertext, salt, nonces
 ```
-
-## Security Considerations
-
-- **Key storage** – Protect the `.keys/amk.key` file with strict filesystem
-  permissions (`0o600`) and back it up securely; losing it prevents UMK
-  recovery.【F:password_manager/vault/crypto_utils.py†L55-L142】
-- **Monitoring** – Dedicated logging channels record successes and failures for
-  key operations, helping detect tampering or configuration issues.
-- **Memory hygiene** – While `secure_zero` cannot guarantee complete erasure in
-  Python, it limits exposure by overwriting buffers and forcing garbage
-  collection when possible.【F:password_manager/vault/crypto_utils.py†L445-L471】
-- **Legacy cleanup** – Remove or rotate data that still depends on the static
-  AES-CFB helper to ensure all secrets benefit from authenticated encryption.
