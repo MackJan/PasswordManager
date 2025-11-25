@@ -773,6 +773,45 @@ docker compose exec web coverage run --source='.' manage.py test
 docker compose exec web coverage report
 ```
 
+### 4.4	Manual Testing
+### 4.4.1	CSRF Attacks
+1.	Created html file locally with this content:
+```html
+<form action="http://password.janmack.de/vault/" method="POST">
+    <input type="hidden" name="action" value="delete">
+    <!-- Guess an ID or use one you know exists -->
+    <input type="hidden" name="id" value="dummy-id">
+    <input type="submit" value="Click to Win Prize!">
+</form>
+```
+
+2.	Logged in to the real website
+3.	Opened the local file in the same browser and pressed the button
+
+Result:
+1. Redirected to the real website with this error:
+2.	Incident was logged in Grafana by the django.security.csrf logger:
+- Forbidden (Origin checking failed - null does not match any trusted origins.): /vault/
+
+### 4.4.2	XSS Attack
+1.	Log in to Application
+2.	Create Vault entry with “Test Item <script>alert('XSS')</script>” in the name, username, password field and “<img src=x onerror=alert('XSS in Notes')>“ in the Notes field
+
+Result:
+- Created a Vault Item with all the input data as values but none were executed
+
+### 4.4.3	Rate Limiting
+1.	Repeatedly enter wrong login details
+2.	Repeatedly enter wrong Recovery Codes
+3.	Repeatedly request Password resets
+
+Result:
+
+30 min / 1 hour timeout
+
+### 4.4.4	Other Attacks
+Attacks like Insecure Direct Object Reference  or  SQL Injection are all prevented by the ORM design of Djangos database Model.
+
 ---
 
 ## 5. Local Deployment & Operations
@@ -1102,5 +1141,5 @@ The application demonstrates production-ready security practices including:
 ---
 
 **Report Generated:** November 22, 2025  
-**Author:** Project Analysis Tool  
+**Author:** Jan Mack
 **Course:** ICS0020 - Web Application Security
